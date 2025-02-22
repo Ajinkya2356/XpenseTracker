@@ -7,6 +7,7 @@ class ThemeConfig {
   static Color backgroundColor = const Color(0xFF121212);  // Dark Background
   static Color surfaceColor = const Color(0xFF1E1E1E);    // Slightly lighter black
   static Color lightColor = const Color(0xFFFFFFFF);  // White
+  static Color darkColor = const Color.fromARGB(255, 10, 10, 10);  // Black
   
   static const Color appBarColor = Color(0xFF2C3639);
   static const Color expenseRed = Color(0xFFE74C3C);

@@ -4,6 +4,8 @@ import '../pages/transactions_page.dart';
 import '../pages/analytics_page.dart';
 import '../pages/settings_page.dart';
 import '../config/theme_config.dart';
+import '../pages/notification_page.dart';  // Add this import
+import '../pages/profile_page.dart';  // Add this import
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,13 +16,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
-
-  final List<Widget> _pages = [
-    const DashboardPage(),
-    const TransactionsPage(),
-    const AnalyticsPage(),
-    const SettingsPage(),
-  ];
 
   void _onDestinationSelected(int index) {
     // Skip the middle item (index 2) which is the placeholder for FAB
@@ -37,6 +32,19 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> pages = [
+      DashboardPage(
+        onNavigate: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      ),
+      const TransactionsPage(),
+      const AnalyticsPage(),
+      const SettingsPage(),
+    ];
+
     // Calculate displayed index for navigation bar
     int displayIndex = _currentIndex >= 2 ? _currentIndex + 1 : _currentIndex;
     
@@ -92,7 +100,14 @@ class _HomePageState extends State<HomePage> {
               icon: const Icon(Icons.notifications_none_outlined),
               iconSize: 24,
               color: Colors.white,
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationPage(),
+                  ),
+                );
+              },
             ),
           ),
           Container(
@@ -105,7 +120,12 @@ class _HomePageState extends State<HomePage> {
               icon: const Icon(Icons.account_circle_outlined),
               iconSize: 24,
               color: Colors.white,
-              onPressed: () {},
+              onPressed: () {
+                // Navigate to Settings page (index 3)
+                setState(() {
+                  _currentIndex = 3;
+                });
+              },
             ),
           ),
         ],
@@ -113,7 +133,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Container(
         color: ThemeConfig.backgroundColor, // Changed from gradient to solid color
-        child: _pages[_currentIndex],
+        child: pages[_currentIndex],
       ),
       floatingActionButton: Container(
         height: 65,

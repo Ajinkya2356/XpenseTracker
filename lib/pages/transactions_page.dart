@@ -6,107 +6,109 @@ class TransactionsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Search and Filter Bar
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+    return Scaffold(
+      body: Column(
+        children: [
+          // Search and Filter Bar
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: ThemeConfig.surfaceColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            decoration: const InputDecoration(
+                              hintText: 'Search expenses',
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: ThemeConfig.surfaceColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          decoration: const InputDecoration(
-                            hintText: 'Search expenses',
-                            border: InputBorder.none,
+                  child: const Icon(Icons.filter_list),
+                ),
+              ],
+            ),
+          ),
+
+          // Transactions List
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: 20,
+              itemBuilder: (context, index) {
+                final expense = _getExpense(index);
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Reduced padding
+                    leading: Container(
+                      padding: const EdgeInsets.all(8), // Reduced padding
+                      decoration: BoxDecoration(
+                        color: expense.color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8), // Reduced radius
+                      ),
+                      child: Icon(expense.icon, color: expense.color, size: 22), // Slightly larger icon
+                    ),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          expense.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16, // Increased from 15
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: ThemeConfig.surfaceColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.filter_list),
-              ),
-            ],
-          ),
-        ),
-
-        // Transactions List
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: 20,
-            itemBuilder: (context, index) {
-              final expense = _getExpense(index);
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Reduced padding
-                  leading: Container(
-                    padding: const EdgeInsets.all(8), // Reduced padding
-                    decoration: BoxDecoration(
-                      color: expense.color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8), // Reduced radius
-                    ),
-                    child: Icon(expense.icon, color: expense.color, size: 22), // Slightly larger icon
-                  ),
-                  title: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        expense.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16, // Increased from 15
+                        Text(
+                          '₹${expense.amount}',
+                          style: TextStyle(
+                            color: expense.color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18, // Increased from 16
+                          ),
                         ),
-                      ),
-                      Text(
-                        '₹${expense.amount}',
+                      ],
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4), // Reduced top padding
+                      child: Text(
+                        _getDate(index),
                         style: TextStyle(
-                          color: expense.color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18, // Increased from 16
+                          color: Colors.grey[400],
+                          fontSize: 13, // Increased from 12
                         ),
-                      ),
-                    ],
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4), // Reduced top padding
-                    child: Text(
-                      _getDate(index),
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 13, // Increased from 12
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

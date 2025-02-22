@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/theme_config.dart';
+import 'notification_page.dart'; // Add this line to import NotificationPage
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -15,12 +16,19 @@ class SettingsPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 40,
-                  backgroundImage: AssetImage('assets/images/profile.jpg'),
+                  backgroundColor: ThemeConfig.primaryColor.withOpacity(0.1),
                   child: Stack(
                     children: [
-                      Positioned(
+                      Center(
+                        child: Icon(
+                          Icons.person,
+                          size: 40,
+                          color: ThemeConfig.primaryColor,
+                        ),
+                      ),
+                      const Positioned(
                         right: 0,
                         bottom: 0,
                         child: CircleAvatar(
@@ -83,7 +91,7 @@ class SettingsPage extends StatelessWidget {
           subtitle: 'Budget alerts & reminders',
           icon: Icons.notifications_active,
           color: Colors.orange,
-          onTap: () {},
+          onTap: () {}, // Removed navigation, empty callback
           trailing: Switch(
             value: true,
             onChanged: (value) {},
