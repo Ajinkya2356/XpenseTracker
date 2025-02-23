@@ -5,6 +5,7 @@ import '../pages/settings_page.dart';
 import '../config/theme_config.dart';
 import '../pages/notification_page.dart';
 import '../pages/settings_page.dart';
+import '../pages/qr_scanner_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -151,7 +152,14 @@ class _HomePageState extends State<HomePage> {
           // Removed boxShadow property
         ),
         child: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const QRScannerPage(),
+              ),
+            );
+          },
           elevation: 0,
           backgroundColor: Colors.transparent,
           child: const Icon(
