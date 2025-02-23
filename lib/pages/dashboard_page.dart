@@ -603,8 +603,8 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           child: Image.asset(
             asset,
-            width: 24,
-            height: 24,
+            width: 48,
+            height: 48,
           ),
         ),
         const SizedBox(height: 4),

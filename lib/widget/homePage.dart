@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../pages/dashboard_page.dart';
 import '../pages/transactions_page.dart';
-import '../pages/analytics_page.dart';
 import '../pages/settings_page.dart';
 import '../config/theme_config.dart';
-import '../pages/notification_page.dart'; // Add this import
-// Add this import
+import '../pages/notification_page.dart';
+import '../pages/settings_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,38 +17,35 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   void _onDestinationSelected(int index) {
-    // Skip the middle item (index 1) which is the placeholder for FAB
-    if (index < 1) {
+    // Fixed navigation logic
+    if (index == 0) {
       setState(() {
-        _currentIndex = index;
+        _currentIndex = 0;
       });
-    } else if (index > 1) {
+    } else if (index == 1) {
       setState(() {
-        _currentIndex =
-            index - 1; // Adjust index to account for FAB placeholder
+        _currentIndex = 1;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
+    final List<Widget> _pages = [
       DashboardPage(
         onNavigate: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          if (index < 2) { // Ensure index is within bounds
+            setState(() {
+              _currentIndex = index;
+            });
+          }
         },
       ),
       const TransactionsPage(),
     ];
 
-    // Calculate displayed index for navigation bar
-    int displayIndex = _currentIndex >= 1 ? _currentIndex + 1 : _currentIndex;
-
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: ThemeConfig.surfaceColor, // Add this line
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -134,9 +130,8 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
       ),
       body: Container(
-        color:
-            ThemeConfig.backgroundColor, // Changed from gradient to solid color
-        child: pages[_currentIndex],
+        color: ThemeConfig.backgroundColor, // Changed from gradient to solid color
+        child: _pages[_currentIndex],
       ),
       floatingActionButton: Container(
         height: 65,
@@ -186,24 +181,19 @@ class _HomePageState extends State<HomePage> {
           clipBehavior: Clip.antiAlias, // Added smooth clipping
           child: NavigationBar(
             height: 65,
-            backgroundColor:
-                Colors.transparent, // Made transparent to show BottomAppBar
+            backgroundColor: Colors.transparent, // Made transparent to show BottomAppBar
             elevation: 0, // Removed elevation
             indicatorColor: ThemeConfig.primaryColor.withOpacity(0.1),
-            selectedIndex: displayIndex,
+            selectedIndex: _currentIndex,
             onDestinationSelected: _onDestinationSelected,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: [
-              const NavigationDestination(
+            destinations: const [
+              NavigationDestination(
                 icon: Icon(Icons.dashboard_outlined),
                 selectedIcon: Icon(Icons.dashboard),
                 label: 'Home',
               ),
-              const NavigationDestination(
-                icon: SizedBox(), // Empty space for FAB
-                label: '',
-              ),
-              const NavigationDestination(
+              NavigationDestination(
                 icon: Icon(Icons.receipt_long_outlined),
                 selectedIcon: Icon(Icons.receipt_long),
                 label: 'Expenses',
