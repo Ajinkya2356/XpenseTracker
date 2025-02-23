@@ -35,122 +35,56 @@ class _NotificationPageState extends State<NotificationPage> {
           ? _buildEmptyState()
           : Column(
               children: [
-                // Today's Summary
-                if (notifications.isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF2C3E50),  // Rich dark blue
-                          const Color(0xFF1A237E).withOpacity(0.95), // Deep indigo
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.1),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
+                // Clear All Button
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showClearConfirmationDialog(context),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
-                            color: ThemeConfig.primaryColor.withOpacity(0.2),
+                            color: ThemeConfig.expenseRed.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: ThemeConfig.primaryColor.withOpacity(0.3),
-                              width: 1,
+                              color: ThemeConfig.expenseRed.withOpacity(0.3),
                             ),
                           ),
-                          child: const Icon(
-                            Icons.notifications_active,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text(
-                                "Today's Updates",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
+                              Icon(
+                                Icons.delete_outline_rounded,
+                                size: 20,
+                                color: ThemeConfig.expenseRed,
                               ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${notifications.length} new notifications',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Clear All',
+                                style: TextStyle(
+                                  color: ThemeConfig.expenseRed,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        TextButton.icon(
-                          onPressed: () => _showClearConfirmationDialog(context),
-                          icon: Icon(
-                            Icons.delete_outline_rounded,  // Changed icon
-                            size: 20,
-                            color: Colors.white.withOpacity(0.95),  // Slightly transparent white
-                          ),
-                          label: Text(
-                            'Clear All',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
-                              color: Colors.white.withOpacity(0.95),  // Matching icon color
-                            ),
-                          ),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: const Color(0xFFE53935),  // Slightly darker red
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-
-                // Notifications List with Animation
+                ),
+                
+                // Notifications List
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(16),
                     itemCount: notifications.length,
                     itemBuilder: (context, index) {
                       final notification = notifications[index];

@@ -53,6 +53,9 @@ flutter:
   uses-material-design: true
   assets:
     - .env
+    - assets/
+    - assets/images/
+    - assets/images/profile.jpg
     - assets/gpay.png
     - assets/phonepe.png
     - assets/paytm.png

@@ -101,7 +101,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                 ),
 
                 // Scanner animation
-                Container(
+                SizedBox(
                   height: 300, // Increased from 260
                   width: 300,  // Increased from 260
                   child: AnimatedBuilder(

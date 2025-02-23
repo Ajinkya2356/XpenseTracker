@@ -32,7 +32,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> _pages = [
+    final List<Widget> pages = [
       DashboardPage(
         onNavigate: (index) {
           if (index < 2) { // Ensure index is within bounds
@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Container(
         color: ThemeConfig.backgroundColor, // Changed from gradient to solid color
-        child: _pages[_currentIndex],
+        child: pages[_currentIndex],
       ),
       floatingActionButton: Container(
         height: 65,
@@ -175,7 +175,7 @@ class _HomePageState extends State<HomePage> {
           navigationBarTheme: NavigationBarThemeData(
             backgroundColor: ThemeConfig.surfaceColor,
             indicatorColor: ThemeConfig.primaryColor.withOpacity(0.1),
-            labelTextStyle: MaterialStateProperty.all(
+            labelTextStyle: WidgetStateProperty.all(
               const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ),
