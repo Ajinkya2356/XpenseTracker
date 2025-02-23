@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/theme_config.dart';
-import './transactions_page.dart'; // Add this import
+// Add this import
 
 class DashboardPage extends StatefulWidget {  // Changed to StatefulWidget
   final Function(int)? onNavigate;  // Add this line
@@ -166,31 +166,14 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Text(
-                                  expense.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                // Payment method icon next to title
-                                Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: ThemeConfig.surfaceColor,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Image.asset(
-                                    paymentIcon,
-                                    width: 16,
-                                    height: 16,
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              expense.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
+                            const SizedBox(height: 4),
                             Text(
                               _getDate(index),
                               style: TextStyle(
@@ -201,14 +184,33 @@ class _DashboardPageState extends State<DashboardPage> {
                           ],
                         ),
                       ),
-                      // Amount
-                      Text(
-                        '₹${expense.amount}',
-                        style: TextStyle(
-                          color: expense.color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                      // Amount and Payment Method
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '₹${expense.amount}',
+                            style: TextStyle(
+                              color: expense.color,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            height: 22, // Increased from 18
+                            width: 50, // Increased from 40
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: ThemeConfig.surfaceColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Image.asset(
+                              paymentIcon,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -624,6 +626,15 @@ class _DashboardPageState extends State<DashboardPage> {
       'assets/paytm.png',
     ];
     return icons[index % icons.length];
+  }
+
+  String _getPaymentName(int index) {
+    final names = [
+      'GPay',
+      'PhonePe',
+      'Paytm',
+    ];
+    return names[index % names.length];
   }
 }
 

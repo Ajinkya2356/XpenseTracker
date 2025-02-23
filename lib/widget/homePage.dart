@@ -4,8 +4,8 @@ import '../pages/transactions_page.dart';
 import '../pages/analytics_page.dart';
 import '../pages/settings_page.dart';
 import '../config/theme_config.dart';
-import '../pages/notification_page.dart';  // Add this import
-import '../pages/profile_page.dart';  // Add this import
+import '../pages/notification_page.dart'; // Add this import
+// Add this import
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,14 +18,15 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   void _onDestinationSelected(int index) {
-    // Skip the middle item (index 2) which is the placeholder for FAB
-    if (index < 2) {
+    // Skip the middle item (index 1) which is the placeholder for FAB
+    if (index < 1) {
       setState(() {
         _currentIndex = index;
       });
-    } else if (index > 2) {
+    } else if (index > 1) {
       setState(() {
-        _currentIndex = index - 1; // Adjust index to account for FAB placeholder
+        _currentIndex =
+            index - 1; // Adjust index to account for FAB placeholder
       });
     }
   }
@@ -41,15 +42,14 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       const TransactionsPage(),
-      const AnalyticsPage(),
-      const SettingsPage(),
     ];
 
     // Calculate displayed index for navigation bar
-    int displayIndex = _currentIndex >= 2 ? _currentIndex + 1 : _currentIndex;
-    
+    int displayIndex = _currentIndex >= 1 ? _currentIndex + 1 : _currentIndex;
+
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: ThemeConfig.surfaceColor, // Add this line
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -121,10 +121,12 @@ class _HomePageState extends State<HomePage> {
               iconSize: 24,
               color: Colors.white,
               onPressed: () {
-                // Navigate to Settings page (index 3)
-                setState(() {
-                  _currentIndex = 3;
-                });
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsPage(),
+                  ),
+                );
               },
             ),
           ),
@@ -132,7 +134,8 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
       ),
       body: Container(
-        color: ThemeConfig.backgroundColor, // Changed from gradient to solid color
+        color:
+            ThemeConfig.backgroundColor, // Changed from gradient to solid color
         child: pages[_currentIndex],
       ),
       floatingActionButton: Container(
@@ -164,47 +167,49 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        height: 65,
-        padding: const EdgeInsets.symmetric(horizontal: 8), // Added padding
-        color: ThemeConfig.surfaceColor,
-        shape: const CircularNotchedRectangle(), // Added notch
-        notchMargin: 8, // Increased notch margin for more space
-        clipBehavior: Clip.antiAlias, // Added smooth clipping
-        child: NavigationBar(
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          navigationBarTheme: NavigationBarThemeData(
+            backgroundColor: ThemeConfig.surfaceColor,
+            indicatorColor: ThemeConfig.primaryColor.withOpacity(0.1),
+            labelTextStyle: MaterialStateProperty.all(
+              const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ),
+        child: BottomAppBar(
           height: 65,
-          backgroundColor: Colors.transparent, // Made transparent to show BottomAppBar
-          elevation: 0, // Removed elevation
-          indicatorColor: ThemeConfig.primaryColor.withOpacity(0.1),
-          selectedIndex: displayIndex,
-          onDestinationSelected: _onDestinationSelected,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long),
-              label: 'Expenses',
-            ),
-            NavigationDestination(
-              icon: SizedBox(), // Empty space for FAB
-              label: '',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.analytics_outlined),
-              selectedIcon: Icon(Icons.analytics),
-              label: 'Analytics',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: 'Settings',
-            ),
-          ],
+          padding: const EdgeInsets.symmetric(horizontal: 8), // Added padding
+          color: ThemeConfig.surfaceColor,
+          shape: const CircularNotchedRectangle(), // Added notch
+          notchMargin: 8, // Increased notch margin for more space
+          clipBehavior: Clip.antiAlias, // Added smooth clipping
+          child: NavigationBar(
+            height: 65,
+            backgroundColor:
+                Colors.transparent, // Made transparent to show BottomAppBar
+            elevation: 0, // Removed elevation
+            indicatorColor: ThemeConfig.primaryColor.withOpacity(0.1),
+            selectedIndex: displayIndex,
+            onDestinationSelected: _onDestinationSelected,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: [
+              const NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard),
+                label: 'Home',
+              ),
+              const NavigationDestination(
+                icon: SizedBox(), // Empty space for FAB
+                label: '',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.receipt_long_outlined),
+                selectedIcon: Icon(Icons.receipt_long),
+                label: 'Expenses',
+              ),
+            ],
+          ),
         ),
       ),
     );

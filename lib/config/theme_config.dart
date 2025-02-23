@@ -32,7 +32,6 @@ class ThemeConfig {
     colorScheme: ColorScheme.dark(
       primary: primaryColor,
       secondary: darkBlue,
-      background: backgroundColor,
       surface: surfaceColor,
     ),
     appBarTheme: AppBarTheme(
