@@ -477,57 +477,61 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-            child: Card(
-              elevation: 0,
-              margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const CircleAvatar(
-                      radius: 40,
-                      backgroundImage: AssetImage('assets/images/profile.jpg'),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: CircleAvatar(
-                              radius: 12,
-                              backgroundColor: Colors.blue,
-                              child: Icon(Icons.edit, size: 12, color: Colors.white),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'John Doe',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      'john.doe@example.com',
-                      style: TextStyle(color: Colors.grey[400]),
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton(
-                      onPressed: () {},
-                      child: const Text('Edit Profile'),
-                    ),
-                  ],
-                ),
+      appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                ThemeConfig.appBarColor,
+                ThemeConfig.darkestBlue,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: const Text('Settings'),
+        backgroundColor: Colors.transparent,
+      ),
+      backgroundColor: ThemeConfig.backgroundColor,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Profile Card
+          Card(
+            elevation: 0,
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildProfileImage(),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'John Doe',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'john.doe@example.com',
+                    style: TextStyle(color: Colors.grey[400]),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton(
+                    onPressed: _showEditProfile,
+                    child: const Text('Edit Profile'),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 24), // Increased spacing
+          const SizedBox(height: 24),
 
           // Settings List
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5, // Reduced from 6
-            separatorBuilder: (context, index) => const SizedBox(height: 12), // Spacing between items
+            itemCount: 5,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               switch (index) {
                 case 0:
