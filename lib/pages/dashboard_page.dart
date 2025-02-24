@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../config/theme_config.dart';
-// Add this import
 
 class DashboardPage extends StatefulWidget {  // Changed to StatefulWidget
   final Function(int)? onNavigate;  // Add this line
@@ -13,6 +12,13 @@ class DashboardPage extends StatefulWidget {  // Changed to StatefulWidget
 class _DashboardPageState extends State<DashboardPage> {
   late PageController _pageController;
   int _currentPage = 0;
+
+  final List<Map<String, dynamic>> categories = [
+    {'name': 'Food', 'amount': '₹8,500', 'icon': Icons.restaurant, 'color': Colors.orange},
+    {'name': 'Shopping', 'amount': '₹6,200', 'icon': Icons.shopping_bag, 'color': Colors.blue},
+    {'name': 'Transport', 'amount': '₹4,800', 'icon': Icons.directions_car, 'color': Colors.green},
+    {'name': 'Bills', 'amount': '₹5,000', 'icon': Icons.receipt_long, 'color': Colors.purple},
+  ];
 
   @override
   void initState() {
@@ -53,176 +59,182 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Add top margin
-          const SizedBox(height: 16),
-          
-          // Monthly Cards Section
-          SizedBox(
-            height: 210, // Increased from 200 to accommodate content
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() => _currentPage = index);
-              },
-              itemCount: 12,
-              itemBuilder: (context, index) {
-                double scale = _currentPage == index ? 1.0 : 0.9;
-                return TweenAnimationBuilder(
-                  tween: Tween(begin: scale, end: scale),
-                  duration: const Duration(milliseconds: 300),
-                  builder: (context, double value, child) {
-                    return Transform.scale(
-                      scale: value,
-                      child: _buildMonthCard(index, screenWidth),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Spending by Category
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'Spending by Category',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 100,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildCategoryCard('Food', '₹8,500', Icons.restaurant, Colors.orange),
-                _buildCategoryCard('Shopping', '₹6,200', Icons.shopping_bag, Colors.blue),
-                _buildCategoryCard('Transport', '₹4,800', Icons.directions_car, Colors.green),
-                _buildCategoryCard('Bills', '₹5,000', Icons.receipt_long, Colors.purple),
-              ],
-            ),
-          ),
-
-          // Recent Transactions header
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Recent Transactions',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    if (widget.onNavigate != null) {
-                      widget.onNavigate!(1); // Navigate to index 1 (Expenses)
-                    }
-                  },
-                  child: const Text('See All'),
-                ),
-              ],
-            ),
-          ),
-          // Recent Transactions ListView
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5, // Show only 5 recent transactions
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemBuilder: (context, index) {
-              final expense = _getExpense(index);
-              final paymentIcon = _getPaymentIcon(index);
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                elevation: 0, // Remove elevation/shadow
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
+          // Monthly Summary Section
+          Card(
+            margin: const EdgeInsets.all(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Category Icon
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: expense.color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(expense.icon, color: expense.color, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      // Title and Date
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              expense.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _getDate(index),
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Amount and Payment Method
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '₹${expense.amount}',
+                            'March 2024',
                             style: TextStyle(
-                              color: expense.color,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Container(
-                            height: 22, // Increased from 18
-                            width: 50, // Increased from 40
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: ThemeConfig.surfaceColor,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Image.asset(
-                              paymentIcon,
-                              fit: BoxFit.contain,
+                          Text(
+                            'Total Expenses',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
                             ),
                           ),
                         ],
                       ),
+                      Text(
+                        '₹45,800',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: ThemeConfig.primaryColor,
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              );
-            },
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildStat('Daily Avg', '₹1,477'),
+                      Container(
+                        height: 24,
+                        width: 1,
+                        color: Colors.grey.withOpacity(0.2),
+                      ),
+                      _buildStat('Highest', '₹12,500'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
 
-          // Add some bottom padding
-          const SizedBox(height: 24),
+          // Category Spending Title
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16), // Increased top padding
+            child: Text(
+              'Spending by Category',
+              style: TextStyle(
+                fontSize: 20, // Increased from 16
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[200],
+              ),
+            ),
+          ),
           
+          // Category Spending Cards
+          _buildCategorySpending(),
+          
+          // Recent Transactions Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16), // Increased top padding
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recent Transactions',
+                  style: TextStyle(
+                    fontSize: 20, // Increased from 16
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[200],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => widget.onNavigate?.call(1),
+                  child: const Text(
+                    'See All',
+                    style: TextStyle(fontSize: 16), // Increased from default
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ...rest of the existing code...
         ],
+      ),
+    );
+  }
+
+  Widget _buildStat(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.grey,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategorySpending() {
+    return SizedBox(
+      height: 110,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: categories.length,
+        itemBuilder: (context, index) {
+          final category = categories[index];
+          return Container(
+            width: 130,
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: category['color'].withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: category['color'].withOpacity(0.3),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(category['icon'], color: category['color']),
+                const Spacer(),
+                Text(
+                  category['name'],
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    category['amount'],
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: category['color'],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

@@ -6,6 +6,7 @@ import '../config/theme_config.dart';
 import '../pages/notification_page.dart';
 import '../pages/settings_page.dart';
 import '../pages/qr_scanner_page.dart';
+import '../pages/analytics_page.dart';  // Add this import
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,34 +18,14 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  void _onDestinationSelected(int index) {
-    // Fixed navigation logic
-    if (index == 0) {
-      setState(() {
-        _currentIndex = 0;
-      });
-    } else if (index == 1) {
-      setState(() {
-        _currentIndex = 1;
-      });
-    }
-  }
+  final List<Widget> pages = [
+    const DashboardPage(),
+    const TransactionsPage(),
+    const SizedBox(), // Placeholder for QR Scanner
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
-      DashboardPage(
-        onNavigate: (index) {
-          if (index < 2) { // Ensure index is within bounds
-            setState(() {
-              _currentIndex = index;
-            });
-          }
-        },
-      ),
-      const TransactionsPage(),
-    ];
-
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: Container(
@@ -130,84 +111,101 @@ class _HomePageState extends State<HomePage> {
         ],
         elevation: 0,
       ),
-      body: Container(
-        color: ThemeConfig.backgroundColor, // Changed from gradient to solid color
-        child: pages[_currentIndex],
-      ),
-      floatingActionButton: Container(
-        height: 65,
-        width: 65,
-        margin: const EdgeInsets.only(top: 25), // Adjusted top margin
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.lightBlueAccent,
-              ThemeConfig.primaryColor,
-              ThemeConfig.darkBlue,
-            ],
-          ),
-          shape: BoxShape.circle,
-          // Removed boxShadow property
-        ),
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const QRScannerPage(),
+      body: pages[_currentIndex == 2 ? 0 : _currentIndex], // Skip index 2 (QR Scanner)
+      bottomNavigationBar: BottomAppBar(
+        height: 75, // Increased height to accommodate larger button
+        padding: EdgeInsets.zero,
+        color: ThemeConfig.surfaceColor,
+        child: Row(
+          children: [
+            // Left side items (Home)
+            Expanded(
+              child: Center(
+                child: _buildNavItem(0, Icons.dashboard_outlined, Icons.dashboard, 'Home'),
               ),
-            );
-          },
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          child: const Icon(
-            Icons.qr_code_scanner,
-            size: 40, // Increased icon size
-            color: Colors.white,
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: Theme(
-        data: Theme.of(context).copyWith(
-          navigationBarTheme: NavigationBarThemeData(
-            backgroundColor: ThemeConfig.surfaceColor,
-            indicatorColor: ThemeConfig.primaryColor.withOpacity(0.1),
-            labelTextStyle: WidgetStateProperty.all(
-              const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
-          ),
+            
+            // Center QR Scanner button
+            Container(
+              width: 75,  // Increased from 65
+              height: 75, // Increased from 65
+              margin: const EdgeInsets.only(bottom: 15), // Increased from 10
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.lightBlueAccent,
+                    ThemeConfig.primaryColor,
+                    ThemeConfig.darkBlue,
+                  ],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [  // Added subtle shadow
+                  BoxShadow(
+                    color: ThemeConfig.primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QRScannerPage(),
+                      ),
+                    );
+                  },
+                  customBorder: const CircleBorder(),
+                  child: const Icon(
+                    Icons.qr_code_scanner,
+                    size: 40, // Increased from 35
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            
+            // Right side items (Expenses)
+            Expanded(
+              child: Center(
+                child: _buildNavItem(1, Icons.receipt_long_outlined, Icons.receipt_long, 'Expenses'),
+              ),
+            ),
+          ],
         ),
-        child: BottomAppBar(
-          height: 65,
-          padding: const EdgeInsets.symmetric(horizontal: 8), // Added padding
-          color: ThemeConfig.surfaceColor,
-          shape: const CircularNotchedRectangle(), // Added notch
-          notchMargin: 8, // Increased notch margin for more space
-          clipBehavior: Clip.antiAlias, // Added smooth clipping
-          child: NavigationBar(
-            height: 65,
-            backgroundColor: Colors.transparent, // Made transparent to show BottomAppBar
-            elevation: 0, // Removed elevation
-            indicatorColor: ThemeConfig.primaryColor.withOpacity(0.1),
-            selectedIndex: _currentIndex,
-            onDestinationSelected: _onDestinationSelected,
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: 'Home',
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label) {
+    final isSelected = _currentIndex == index;
+    
+    return InkWell(
+      onTap: () => setState(() => _currentIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
+              color: isSelected ? ThemeConfig.primaryColor : Colors.grey,
+              size: 24,
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? ThemeConfig.primaryColor : Colors.grey,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
-              NavigationDestination(
-                icon: Icon(Icons.receipt_long_outlined),
-                selectedIcon: Icon(Icons.receipt_long),
-                label: 'Expenses',
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

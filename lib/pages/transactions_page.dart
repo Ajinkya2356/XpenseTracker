@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../config/theme_config.dart';
+import '../providers/expense_filters.dart';
 
 class TransactionsPage extends StatefulWidget {
   const TransactionsPage({super.key});
@@ -16,10 +18,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
   List<String> selectedPaymentMethods = [];
   List<Expense> filteredExpenses = [];
   List<Expense> allExpenses = [];
+  late TextEditingController _searchController;
 
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
     allExpenses = [
       Expense('Groceries', Icons.shopping_cart, 2450, const Color(0xFF4CAF50), 'Google Pay'),
       Expense('Restaurant', Icons.restaurant, 1800, const Color(0xFFF44336), 'PhonePe'),
@@ -39,6 +43,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
       Expense('Supermarket', Icons.local_grocery_store, 3450, const Color(0xFF4CAF50), 'Paytm'),
     ];
     filteredExpenses = List.from(allExpenses);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   final List<Map<String, dynamic>> categories = [
@@ -524,71 +534,142 @@ class _TransactionsPageState extends State<TransactionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(  // Changed back to Column from Stack
-      children: [
-        // Search bar
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: ThemeConfig.surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          decoration: const InputDecoration(
-                            hintText: 'Search expenses',
-                            border: InputBorder.none,
-                          ),
+    return Consumer<ExpenseFilters>(
+      builder: (context, filters, child) {
+        final filteredExpenses = filters.filterExpenses(allExpenses);
+        
+        return Column(
+          children: [
+            // Search and Filter Bar
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: filters.updateSearch,
+                      decoration: InputDecoration(
+                        hintText: 'Search expenses',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        filled: true,
+                        fillColor: ThemeConfig.surfaceColor,
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _showFilterSheet,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: ThemeConfig.surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: filters.hasActiveFilters 
+                          ? ThemeConfig.primaryColor 
+                          : ThemeConfig.surfaceColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.filter_list),
+                      onPressed: _showFilterSheet,
+                      color: filters.hasActiveFilters ? Colors.white : null,
+                    ),
                   ),
-                  child: const Icon(Icons.filter_list),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
 
-        // Transactions List
-        Expanded(
-          child: filteredExpenses.isEmpty
-              ? Center(
-                  child: Text(
-                    'No transactions match your filters',
-                    style: TextStyle(color: Colors.grey[400]),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredExpenses.length,
-                  itemBuilder: (context, index) {
-                    final expense = filteredExpenses[index];
-                    return _buildExpenseCard(expense, index);
-                  },
+            // Active Filters
+            if (filters.hasActiveFilters)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: filters.reset,
+                      icon: const Icon(Icons.clear_all),
+                      label: const Text('Clear All'),
+                    ),
+                    ...filters.selectedCategories.map((category) =>
+                      _buildFilterChip(category, () {
+                        filters.toggleCategory(category);
+                      }),
+                    ),
+                    ...filters.selectedPaymentMethods.map((method) =>
+                      _buildFilterChip(method, () {
+                        filters.togglePaymentMethod(method);
+                      }),
+                    ),
+                  ],
                 ),
-        ),
-      ],
+              ),
+
+            // Transactions List
+            Expanded(
+              child: filteredExpenses.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No transactions match your filters',
+                        style: TextStyle(color: Colors.grey[400]),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filteredExpenses.length,
+                      itemBuilder: (context, index) => 
+                          _buildExpenseCard(
+                            Expense(
+                              filteredExpenses[index]['name'],
+                              _getIcon(filteredExpenses[index]['name']),
+                              int.parse(filteredExpenses[index]['amount'].toString().replaceAll(',', '')),
+                              _getColor(filteredExpenses[index]['name']),
+                              filteredExpenses[index]['paymentMethod'],
+                            ),
+                            index,
+                          ),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  IconData _getIcon(String name) {
+    // Map expense names to icons
+    final iconMap = {
+      'Groceries': Icons.shopping_cart,
+      'Restaurant': Icons.restaurant,
+      'Uber': Icons.directions_car,
+      'Shopping': Icons.shopping_bag,
+      'Electricity': Icons.electric_bolt,
+      // Add more mappings as needed
+    };
+    return iconMap[name] ?? Icons.receipt;
+  }
+
+  Color _getColor(String name) {
+    // Map expense names to colors
+    final colorMap = {
+      'Groceries': const Color(0xFF4CAF50),
+      'Restaurant': const Color(0xFFF44336),
+      'Uber': const Color(0xFF2196F3),
+      'Shopping': const Color(0xFF9C27B0),
+      'Electricity': const Color(0xFFFF9800),
+      // Add more mappings as needed
+    };
+    return colorMap[name] ?? ThemeConfig.primaryColor;
+  }
+
+  Widget _buildFilterChip(String label, VoidCallback onRemove) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Chip(
+        label: Text(label),
+        onDeleted: onRemove,
+        backgroundColor: ThemeConfig.primaryColor.withOpacity(0.1),
+        deleteIconColor: ThemeConfig.primaryColor,
+      ),
     );
   }
 
