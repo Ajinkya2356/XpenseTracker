@@ -67,7 +67,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: ThemeConfig.darkColor,
       builder: (context) => Container(
         decoration: BoxDecoration(
           color: ThemeConfig.surfaceColor,
@@ -97,7 +97,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Color.fromARGB(255, 12, 12, 12),
                     ),
                   ),
                   const Spacer(),
@@ -309,26 +309,246 @@ class _TransactionsPageState extends State<TransactionsPage> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Search bar with filters
+        // Search and Filter Section
         Container(
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: ThemeConfig.darkColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Column(
             children: [
               // Search Bar
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: ThemeConfig.surfaceColor,
+                  color: ThemeConfig.surfaceColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    hintText: 'Search expenses',
-                    border: InputBorder.none,
-                    prefixIcon: Icon(Icons.search),
+                  border: Border.all(
+                    color: Colors.grey[800]!,
+                    width: 1,
                   ),
                 ),
+                child: Row(
+                  children: [
+                    Icon(Icons.search, color: Colors.grey[400]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Search expenses',
+                          border: InputBorder.none,
+                          hintStyle: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_searchController.text.isNotEmpty)
+                      IconButton(
+                        icon: Icon(Icons.clear, color: Colors.grey[400]),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged();
+                        },
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Filter Options Row
+              Row(
+                children: [
+                  // Categories Dropdown
+                  Expanded(
+                    child: IntrinsicWidth( // Added IntrinsicWidth
+                      child: PopupMenuButton<String>(
+                        constraints: const BoxConstraints(
+                          minWidth: 180,
+                          maxWidth: 220,
+                        ),
+                        position: PopupMenuPosition.under,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: selectedCategories.isEmpty 
+                                ? ThemeConfig.surfaceColor.withOpacity(0.1)
+                                : ThemeConfig.primaryColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: selectedCategories.isEmpty
+                                  ? Colors.grey[800]!
+                                  : ThemeConfig.primaryColor.withOpacity(0.5),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min, // Added this
+                            children: [
+                              Icon(
+                                Icons.category_outlined,
+                                size: 18,
+                                color: selectedCategories.isEmpty 
+                                    ? Colors.grey[400]
+                                    : ThemeConfig.primaryColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                selectedCategories.isEmpty
+                                    ? 'Categories'
+                                    : '${selectedCategories.length} Selected',
+                                style: TextStyle(
+                                  color: selectedCategories.isEmpty 
+                                      ? Colors.grey[400]
+                                      : ThemeConfig.primaryColor,
+                                ),
+                              ),
+                              const SizedBox(width: 8), // Changed from Spacer
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: selectedCategories.isEmpty 
+                                    ? Colors.grey[400]
+                                    : ThemeConfig.primaryColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                        itemBuilder: (context) => [
+                          ...categories.map((category) {
+                            return CheckedPopupMenuItem<String>(
+                              value: category['name'] as String,
+                              checked: selectedCategories.contains(category['name']),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    category['icon'] as IconData,
+                                    color: category['color'] as Color,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    category['name'] as String,
+                                    style: const TextStyle(fontSize: 15),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                        onSelected: (value) {
+                          setState(() {
+                            if (selectedCategories.contains(value)) {
+                              selectedCategories.remove(value);
+                            } else {
+                              selectedCategories.add(value);
+                            }
+                            _onSearchChanged();
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  // Payment Methods Dropdown
+                  Expanded(
+                    child: IntrinsicWidth( // Added IntrinsicWidth
+                      child: PopupMenuButton<String>(
+                        constraints: const BoxConstraints(
+                          minWidth: 180,
+                          maxWidth: 220,
+                        ),
+                        position: PopupMenuPosition.under,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: selectedPaymentMethods.isEmpty 
+                                ? ThemeConfig.surfaceColor.withOpacity(0.1)
+                                : ThemeConfig.primaryColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: selectedPaymentMethods.isEmpty
+                                  ? Colors.grey[800]!
+                                  : ThemeConfig.primaryColor.withOpacity(0.5),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min, // Added this
+                            children: [
+                              Icon(
+                                Icons.payment_outlined,
+                                size: 18,
+                                color: selectedPaymentMethods.isEmpty 
+                                    ? Colors.grey[400]
+                                    : ThemeConfig.primaryColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                selectedPaymentMethods.isEmpty
+                                    ? 'Payment'
+                                    : '${selectedPaymentMethods.length} Selected',
+                                style: TextStyle(
+                                  color: selectedPaymentMethods.isEmpty 
+                                      ? Colors.grey[400]
+                                      : ThemeConfig.primaryColor,
+                                ),
+                              ),
+                              const SizedBox(width: 8), // Changed from Spacer
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: selectedPaymentMethods.isEmpty 
+                                    ? Colors.grey[400]
+                                    : ThemeConfig.primaryColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                        itemBuilder: (context) => paymentMethods.map((method) {
+                          return CheckedPopupMenuItem<String>(
+                            value: method['name'] as String,
+                            checked: selectedPaymentMethods.contains(method['name']),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Text(
+                              method['name'] as String,
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                          );
+                        }).toList(),
+                        onSelected: (value) {
+                          setState(() {
+                            if (selectedPaymentMethods.contains(value)) {
+                              selectedPaymentMethods.remove(value);
+                            } else {
+                              selectedPaymentMethods.add(value);
+                            }
+                            _onSearchChanged();
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               // Active Filters
@@ -336,11 +556,8 @@ class _TransactionsPageState extends State<TransactionsPage> {
                 Container(
                   margin: const EdgeInsets.only(top: 12),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      const Icon(Icons.filter_list, size: 16),
-                      const SizedBox(width: 8),
-                      const Text('Active Filters:'),
-                      const Spacer(),
                       TextButton.icon(
                         onPressed: () {
                           setState(() {
@@ -349,102 +566,18 @@ class _TransactionsPageState extends State<TransactionsPage> {
                             _onSearchChanged();
                           });
                         },
-                        icon: const Icon(Icons.clear_all, size: 16),
-                        label: const Text('Clear All'),
+                        icon: Icon(Icons.clear_all, size: 16, color: Colors.grey[400]),
+                        label: Text(
+                          'Clear Filters',
+                          style: TextStyle(color: Colors.grey[400]),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
                       ),
                     ],
                   ),
                 ),
-
-              // Filter Options
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    // Categories Filter
-                    PopupMenuButton<String>(
-                      child: Chip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.category, size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              selectedCategories.isEmpty
-                                  ? 'Categories'
-                                  : '${selectedCategories.length} Selected',
-                            ),
-                          ],
-                        ),
-                      ),
-                      itemBuilder: (context) => categories.map((category) {
-                        return CheckedPopupMenuItem<String>(
-                          value: category['name'] as String,
-                          checked: selectedCategories.contains(category['name']),
-                          child: Row(
-                            children: [
-                              Icon(
-                                category['icon'] as IconData,
-                                color: category['color'] as Color,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(category['name'] as String),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onSelected: (value) {
-                        setState(() {
-                          if (selectedCategories.contains(value)) {
-                            selectedCategories.remove(value);
-                          } else {
-                            selectedCategories.add(value);
-                          }
-                          _onSearchChanged();
-                        });
-                      },
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Payment Methods Filter
-                    PopupMenuButton<String>(
-                      child: Chip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.payment, size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              selectedPaymentMethods.isEmpty
-                                  ? 'Payment Methods'
-                                  : '${selectedPaymentMethods.length} Selected',
-                            ),
-                          ],
-                        ),
-                      ),
-                      itemBuilder: (context) => paymentMethods.map((method) {
-                        final name = method['name'] as String;
-                        return CheckedPopupMenuItem<String>(
-                          value: name,
-                          checked: selectedPaymentMethods.contains(name),
-                          child: Text(name),
-                        );
-                      }).toList(),
-                      onSelected: (value) {
-                        setState(() {
-                          if (selectedPaymentMethods.contains(value)) {
-                            selectedPaymentMethods.remove(value);
-                          } else {
-                            selectedPaymentMethods.add(value);
-                          }
-                          _onSearchChanged();
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
