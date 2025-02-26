@@ -9,6 +9,7 @@ class TransactionsPage extends StatefulWidget {
 }
 
 class _TransactionsPageState extends State<TransactionsPage> {
+  final TextEditingController _searchController = TextEditingController();
   bool _isFilterChanged = false;
   RangeValues _expenseRange = const RangeValues(0, 10000);
   RangeValues _currentRange = const RangeValues(0, 10000);
@@ -39,6 +40,13 @@ class _TransactionsPageState extends State<TransactionsPage> {
       Expense('Supermarket', Icons.local_grocery_store, 3450, const Color(0xFF4CAF50), 'Paytm'),
     ];
     filteredExpenses = List.from(allExpenses);
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   final List<Map<String, dynamic>> categories = [
@@ -59,76 +67,194 @@ class _TransactionsPageState extends State<TransactionsPage> {
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: ThemeConfig.surfaceColor,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(20),
+          ),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Category Dropdown
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: 'Select Category',
-                border: OutlineInputBorder(),
-              ),
-              value: selectedCategories.isEmpty ? null : selectedCategories.first,
-              items: categories.map((category) {
-                return DropdownMenuItem(
-                  value: category['name'] as String,
-                  child: Text(category['name'] as String),
-                );
-              }).toList(),
-              onChanged: (String? value) {
-                if (value != null) {
-                  setState(() {
-                    selectedCategories = [value];
-                    _isFilterChanged = true;
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-            // Payment Method Dropdown
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: 'Select Payment Method',
-                border: OutlineInputBorder(),
-              ),
-              value: selectedPaymentMethods.isEmpty ? null : selectedPaymentMethods.first,
-              items: paymentMethods.map((method) {
-                return DropdownMenuItem(
-                  value: method['name'] as String,
-                  child: Text(method['name'] as String),
-                );
-              }).toList(),
-              onChanged: (String? value) {
-                if (value != null) {
-                  setState(() {
-                    selectedPaymentMethods = [value];
-                    _isFilterChanged = true;
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-            // Action buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    _resetFilters();
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Reset'),
+            // Filter Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [ThemeConfig.primaryColor, ThemeConfig.darkBlue],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    _applyFilters();
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Apply'),
-                ),
-              ],
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Row(
+                children: [
+                  const Text(
+                    'Filter Expenses',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // Filter Content
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Categories Section
+                  Row(
+                    children: [
+                      const Icon(Icons.category, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Categories',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (selectedCategories.isNotEmpty)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              selectedCategories.clear();
+                              _applyFilters();
+                            });
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Clear'),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: categories.map((category) {
+                      final isSelected = selectedCategories.contains(category['name']);
+                      return FilterChip(
+                        selected: isSelected,
+                        showCheckmark: true,
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              category['icon'] as IconData,
+                              size: 16,
+                              color: isSelected ? Colors.white : category['color'] as Color,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(category['name'] as String),
+                          ],
+                        ),
+                        backgroundColor: (category['color'] as Color).withOpacity(0.1),
+                        selectedColor: category['color'] as Color,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : category['color'] as Color,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color: isSelected ? Colors.transparent : (category['color'] as Color).withOpacity(0.5),
+                          ),
+                        ),
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              selectedCategories.add(category['name'] as String);
+                            } else {
+                              selectedCategories.remove(category['name']);
+                            }
+                            _applyFilters();
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Payment Methods Section
+                  Row(
+                    children: [
+                      const Icon(Icons.payment, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Payment Methods',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (selectedPaymentMethods.isNotEmpty)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              selectedPaymentMethods.clear();
+                              _applyFilters();
+                            });
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Clear'),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: paymentMethods.map((method) {
+                      final isSelected = selectedPaymentMethods.contains(method['name']);
+                      return FilterChip(
+                        selected: isSelected,
+                        showCheckmark: true,
+                        label: Text(method['name'] as String),
+                        backgroundColor: Colors.grey.withOpacity(0.1),
+                        selectedColor: ThemeConfig.primaryColor,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.grey[800],
+                          fontWeight: FontWeight.w500,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color: isSelected ? Colors.transparent : Colors.grey.withOpacity(0.3),
+                          ),
+                        ),
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              selectedPaymentMethods.add(method['name'] as String);
+                            } else {
+                              selectedPaymentMethods.remove(method['name']);
+                            }
+                            _applyFilters();
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -164,48 +290,159 @@ class _TransactionsPageState extends State<TransactionsPage> {
     });
   }
 
+  void _onSearchChanged() {
+    final searchQuery = _searchController.text.toLowerCase();
+    setState(() {
+      filteredExpenses = allExpenses.where((expense) {
+        final matchesSearch = expense.name.toLowerCase().contains(searchQuery) ||
+            expense.paymentMethod.toLowerCase().contains(searchQuery);
+        final matchesCategory = selectedCategories.isEmpty ||
+            selectedCategories.contains(expense.name);
+        final matchesPayment = selectedPaymentMethods.isEmpty ||
+            selectedPaymentMethods.contains(expense.paymentMethod);
+        return matchesSearch && matchesCategory && matchesPayment;
+      }).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(  // Changed back to Column from Stack
+    return Column(
       children: [
-        // Search bar
-        Padding(
+        // Search bar with filters
+        Container(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: ThemeConfig.surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
+              // Search Bar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: ThemeConfig.surfaceColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    hintText: 'Search expenses',
+                    border: InputBorder.none,
+                    prefixIcon: Icon(Icons.search),
                   ),
+                ),
+              ),
+
+              // Active Filters
+              if (selectedCategories.isNotEmpty || selectedPaymentMethods.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
                   child: Row(
                     children: [
-                      const Icon(Icons.search, color: Colors.grey),
+                      const Icon(Icons.filter_list, size: 16),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          decoration: const InputDecoration(
-                            hintText: 'Search expenses',
-                            border: InputBorder.none,
-                          ),
-                        ),
+                      const Text('Active Filters:'),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            selectedCategories.clear();
+                            selectedPaymentMethods.clear();
+                            _onSearchChanged();
+                          });
+                        },
+                        icon: const Icon(Icons.clear_all, size: 16),
+                        label: const Text('Clear All'),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _showFilterSheet,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: ThemeConfig.surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.filter_list),
+
+              // Filter Options
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    // Categories Filter
+                    PopupMenuButton<String>(
+                      child: Chip(
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.category, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              selectedCategories.isEmpty
+                                  ? 'Categories'
+                                  : '${selectedCategories.length} Selected',
+                            ),
+                          ],
+                        ),
+                      ),
+                      itemBuilder: (context) => categories.map((category) {
+                        return CheckedPopupMenuItem<String>(
+                          value: category['name'] as String,
+                          checked: selectedCategories.contains(category['name']),
+                          child: Row(
+                            children: [
+                              Icon(
+                                category['icon'] as IconData,
+                                color: category['color'] as Color,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(category['name'] as String),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onSelected: (value) {
+                        setState(() {
+                          if (selectedCategories.contains(value)) {
+                            selectedCategories.remove(value);
+                          } else {
+                            selectedCategories.add(value);
+                          }
+                          _onSearchChanged();
+                        });
+                      },
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Payment Methods Filter
+                    PopupMenuButton<String>(
+                      child: Chip(
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.payment, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              selectedPaymentMethods.isEmpty
+                                  ? 'Payment Methods'
+                                  : '${selectedPaymentMethods.length} Selected',
+                            ),
+                          ],
+                        ),
+                      ),
+                      itemBuilder: (context) => paymentMethods.map((method) {
+                        final name = method['name'] as String;
+                        return CheckedPopupMenuItem<String>(
+                          value: name,
+                          checked: selectedPaymentMethods.contains(name),
+                          child: Text(name),
+                        );
+                      }).toList(),
+                      onSelected: (value) {
+                        setState(() {
+                          if (selectedPaymentMethods.contains(value)) {
+                            selectedPaymentMethods.remove(value);
+                          } else {
+                            selectedPaymentMethods.add(value);
+                          }
+                          _onSearchChanged();
+                        });
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
