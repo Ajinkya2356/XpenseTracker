@@ -169,8 +169,8 @@ class _HomePageState extends State<HomePage> {
             ),
             NavigationDestination(
               icon: Container(
-                height: 56, // Increased from 45
-                width: 56,  // Increased from 45
+                height: 75, // Increased from 45
+                width: 75,  // Increased from 45
                 margin: const EdgeInsets.only(top: 8), // Added margin to lift the button up
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -186,8 +186,8 @@ class _HomePageState extends State<HomePage> {
                   boxShadow: [
                     BoxShadow(
                       color: Colors.blue.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 8,
+                      spreadRadius: 0,
+                      blurRadius: 0,
                       offset: const Offset(0, 2),
                     ),
                   ],

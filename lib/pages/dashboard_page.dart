@@ -16,39 +16,39 @@ class _DashboardPageState extends State<DashboardPage> {
   // Mock data for expenses
   final Map<String, Map<String, dynamic>> monthlyStats = {
     '3': {  // March
-      'total': 42300,
-      'dailyAvg': 1365,
-      'highestAmount': 8500,
+      'total': '42,300',
+      'dailyAvg': '1,365',
+      'highestAmount': '8,500',
       'highestCategory': 'Food',
       'categories': {
-        'Food': 8500,
-        'Shopping': 6200,
-        'Transport': 4800,
-        'Bills': 5000,
+        'Food': '8,500',
+        'Shopping': '6,200',
+        'Transport': '4,800',
+        'Bills': '5,000',
       }
     },
     '2': {  // February
-      'total': 38600,
-      'dailyAvg': 1379,
-      'highestAmount': 7800,
+      'total': '38,600',
+      'dailyAvg': '1,379',
+      'highestAmount': '7,800',
       'highestCategory': 'Food',
       'categories': {
-        'Food': 7800,
-        'Shopping': 5900,
-        'Transport': 4200,
-        'Bills': 4800,
+        'Food': '7,800',
+        'Shopping': '5,900',
+        'Transport': '4,200',
+        'Bills': '4,800',
       }
     },
     '1': {  // January
-      'total': 45800,
-      'dailyAvg': 1477,
-      'highestAmount': 9200,
+      'total': '45,800',
+      'dailyAvg': '1,477',
+      'highestAmount': '9,200',
       'highestCategory': 'Shopping',
       'categories': {
-        'Food': 7200,
-        'Shopping': 9200,
-        'Transport': 4500,
-        'Bills': 4900,
+        'Food': '7,200',
+        'Shopping': '9,200',
+        'Transport': '4,500',
+        'Bills': '4,900',
       }
     }
   };
@@ -877,9 +877,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildCategoryList(Map<String, dynamic> categories) {
-    // Fix the total calculation
-    final total = categories.values.fold<int>(0, (sum, value) => sum + (value as int));
-    
     final categoryColors = {
       'Food': Colors.orange,
       'Shopping': Colors.blue,
@@ -887,14 +884,21 @@ class _DashboardPageState extends State<DashboardPage> {
       'Bills': Colors.purple,
     };
 
+    // Calculate total from the formatted strings
+    final total = categories.values.fold<int>(
+      0,
+      (sum, value) => sum + int.parse(value.toString().replaceAll(',', '')),
+    );
+
     return ListView.builder(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(), // Fixed typo here
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: categories.length,
       itemBuilder: (context, index) {
         final category = categories.keys.elementAt(index);
-        final amount = categories[category] as int;  // Cast to int
+        final amountStr = categories[category].toString();
+        final amount = int.parse(amountStr.replaceAll(',', ''));
         final percentage = (amount / total * 100).toStringAsFixed(1);
         final color = categoryColors[category]!;
 
@@ -914,7 +918,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   Text(
-                    '₹$amount (${percentage}%)',
+                    '₹${categories[category]} (${percentage}%)',
                     style: const TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
