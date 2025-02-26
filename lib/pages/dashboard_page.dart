@@ -162,14 +162,38 @@ class _DashboardPageState extends State<DashboardPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _getMonthName(selectedMonth),
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${_getMonthName(selectedMonth)} 2024',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'FY 2024-25',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 5), // Reduced from 20
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -177,7 +201,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       '₹',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
+                        fontSize: 36,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -202,29 +226,56 @@ class _DashboardPageState extends State<DashboardPage> {
               color: ThemeConfig.surfaceColor,
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildStatItem(
-                    'Daily Average',
-                    '₹${stats['dailyAvg']}',
-                    Icons.calendar_today_outlined,
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildStatItem(
+                      'Daily Average',
+                      '₹${stats['dailyAvg']}',
+                      Icons.calendar_today_outlined,
+                    ),
                   ),
-                ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: Colors.grey[300],
-                ),
-                Expanded(
-                  child: _buildStatItem(
-                    'Highest Expense',
-                    '₹${stats['highestAmount']}',
-                    Icons.arrow_circle_up,
-                    subtitle: stats['highestCategory'],
+                  VerticalDivider(
+                    width: 32,
+                    thickness: 1,
+                    color: Colors.grey[300],
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center, // Center alignment
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center, // Center icon and text
+                          children: [
+                            Icon(
+                              Icons.arrow_circle_up,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Highest Spend',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '₹${stats['highestAmount']}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
