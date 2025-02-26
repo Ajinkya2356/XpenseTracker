@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../config/theme_config.dart';
-// Add this import
 
 class DashboardPage extends StatefulWidget {  // Changed to StatefulWidget
   final Function(int)? onNavigate;  // Add this line
@@ -13,6 +12,46 @@ class DashboardPage extends StatefulWidget {  // Changed to StatefulWidget
 class _DashboardPageState extends State<DashboardPage> {
   late PageController _pageController;
   int _currentPage = 0;
+  String selectedMonth = DateTime.now().month.toString();
+  // Mock data for expenses
+  final Map<String, Map<String, dynamic>> monthlyStats = {
+    '3': {  // March
+      'total': 42300,
+      'dailyAvg': 1365,
+      'highestAmount': 8500,
+      'highestCategory': 'Food',
+      'categories': {
+        'Food': 8500,
+        'Shopping': 6200,
+        'Transport': 4800,
+        'Bills': 5000,
+      }
+    },
+    '2': {  // February
+      'total': 38600,
+      'dailyAvg': 1379,
+      'highestAmount': 7800,
+      'highestCategory': 'Food',
+      'categories': {
+        'Food': 7800,
+        'Shopping': 5900,
+        'Transport': 4200,
+        'Bills': 4800,
+      }
+    },
+    '1': {  // January
+      'total': 45800,
+      'dailyAvg': 1477,
+      'highestAmount': 9200,
+      'highestCategory': 'Shopping',
+      'categories': {
+        'Food': 7200,
+        'Shopping': 9200,
+        'Transport': 4500,
+        'Bills': 4900,
+      }
+    }
+  };
 
   @override
   void initState() {
@@ -45,70 +84,256 @@ class _DashboardPageState extends State<DashboardPage> {
     [const Color(0xFF263238), const Color(0xFF37474F)], // December - Blue Grey
   ];
 
+  Widget _buildMonthSelector() {
+    final months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: months.length,
+        itemBuilder: (context, index) {
+          final monthNumber = (index + 1).toString();
+          final isSelected = selectedMonth == monthNumber;
+          return Padding(
+            padding: const EdgeInsets.only(right: 20),
+            child: InkWell(
+              onTap: () => setState(() => selectedMonth = monthNumber),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    months[index],
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected ? ThemeConfig.primaryColor : Colors.grey[600],
+                    ),
+                  ),
+                  if (isSelected)
+                    Container(
+                      margin: const EdgeInsets.only(top: 4),
+                      width: 20,
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: ThemeConfig.primaryColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatsCard(Map<String, dynamic> stats) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Total Amount Section
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  ThemeConfig.primaryColor,
+                  ThemeConfig.darkBlue,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              boxShadow: [
+                BoxShadow(
+                  color: ThemeConfig.primaryColor.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _getMonthName(selectedMonth),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '₹',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      '${stats['total']}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Stats Section
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: ThemeConfig.surfaceColor,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem(
+                    'Daily Average',
+                    '₹${stats['dailyAvg']}',
+                    Icons.calendar_today_outlined,
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: Colors.grey[300],
+                ),
+                Expanded(
+                  child: _buildStatItem(
+                    'Highest Expense',
+                    '₹${stats['highestAmount']}',
+                    Icons.arrow_circle_up,
+                    subtitle: stats['highestCategory'],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon, {
+    String? subtitle,
+    bool isCard = false,
+  }) {
+    if (isCard) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white70, size: 12),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: Colors.grey[600]),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        if (subtitle != null)
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    
+    final currentStats = monthlyStats[selectedMonth]!;
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Add top margin
           const SizedBox(height: 16),
+          _buildMonthSelector(),
+          _buildStatsCard(currentStats),
           
-          // Monthly Cards Section
-          SizedBox(
-            height: 210, // Increased from 200 to accommodate content
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() => _currentPage = index);
-              },
-              itemCount: 12,
-              itemBuilder: (context, index) {
-                double scale = _currentPage == index ? 1.0 : 0.9;
-                return TweenAnimationBuilder(
-                  tween: Tween(begin: scale, end: scale),
-                  duration: const Duration(milliseconds: 300),
-                  builder: (context, double value, child) {
-                    return Transform.scale(
-                      scale: value,
-                      child: _buildMonthCard(index, screenWidth),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Spending by Category
+          // Category Breakdown Title
           const Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Text(
-              'Spending by Category',
+              'Category Breakdown',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
               ),
             ),
           ),
-          SizedBox(
-            height: 100,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildCategoryCard('Food', '₹8,500', Icons.restaurant, Colors.orange),
-                _buildCategoryCard('Shopping', '₹6,200', Icons.shopping_bag, Colors.blue),
-                _buildCategoryCard('Transport', '₹4,800', Icons.directions_car, Colors.green),
-                _buildCategoryCard('Bills', '₹5,000', Icons.receipt_long, Colors.purple),
-              ],
-            ),
-          ),
-
-          // Recent Transactions header
+          _buildCategoryList(currentStats['categories'] as Map<String, dynamic>),
+          
+          // Recent Transactions
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -197,17 +422,11 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Container(
-                            height: 22, // Increased from 18
-                            width: 50, // Increased from 40
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: ThemeConfig.surfaceColor,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Image.asset(
-                              paymentIcon,
-                              fit: BoxFit.contain,
+                          Text(
+                            paymentIcon,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
                             ),
                           ),
                         ],
@@ -521,6 +740,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 'DAILY AVG',
                                 '₹${monthlyData['daily']}',
                                 Icons.calendar_today_outlined,
+                                isCard: true,
                               ),
                               Container(
                                 width: 1,
@@ -531,6 +751,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 'HIGHEST',
                                 '₹${monthlyData['highest']}',
                                 Icons.show_chart,
+                                isCard: true,
                               ),
                             ],
                           ),
@@ -544,39 +765,6 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white70, size: 12),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
     );
   }
 
@@ -620,12 +808,12 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   String _getPaymentIcon(int index) {
-    final icons = [
-      'assets/gpay.png',
-      'assets/phonepe.png',
-      'assets/paytm.png',
+    final paymentMethods = [
+      'Google Pay',
+      'PhonePe',
+      'Paytm',
     ];
-    return icons[index % icons.length];
+    return paymentMethods[index % paymentMethods.length];
   }
 
   String _getPaymentName(int index) {
@@ -635,6 +823,77 @@ class _DashboardPageState extends State<DashboardPage> {
       'Paytm',
     ];
     return names[index % names.length];
+  }
+
+  Widget _buildCategoryList(Map<String, dynamic> categories) {
+    // Fix the total calculation
+    final total = categories.values.fold<int>(0, (sum, value) => sum + (value as int));
+    
+    final categoryColors = {
+      'Food': Colors.orange,
+      'Shopping': Colors.blue,
+      'Transport': Colors.green,
+      'Bills': Colors.purple,
+    };
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(), // Fixed typo here
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        final category = categories.keys.elementAt(index);
+        final amount = categories[category] as int;  // Cast to int
+        final percentage = (amount / total * 100).toStringAsFixed(1);
+        final color = categoryColors[category]!;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    category,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    '₹$amount (${percentage}%)',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: amount / total,
+                  backgroundColor: color.withOpacity(0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                  minHeight: 8,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _getMonthName(String monthNumber) {
+    final months = [
+      '', 'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months[int.parse(monthNumber)];
   }
 }
 

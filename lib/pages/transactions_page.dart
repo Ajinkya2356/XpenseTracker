@@ -59,374 +59,78 @@ class _TransactionsPageState extends State<TransactionsPage> {
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.75,
-        decoration: BoxDecoration(
-          color: ThemeConfig.darkColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          border: Border.all(
-            color: ThemeConfig.primaryColor.withOpacity(0.2),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
+        padding: const EdgeInsets.all(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Fancy Header with subtle gradient
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    ThemeConfig.darkColor.withOpacity(0.9),
-                    ThemeConfig.darkColor,
-                  ],
-                ),
-                border: Border(
-                  bottom: BorderSide(
-                    color: ThemeConfig.primaryColor.withOpacity(0.2),
-                  ),
-                ),
+            // Category Dropdown
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(
+                labelText: 'Select Category',
+                border: OutlineInputBorder(),
               ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: ThemeConfig.primaryColor.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Filter Transactions',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: ThemeConfig.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: ThemeConfig.primaryColor.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Text(
-                          '${selectedCategories.length + selectedPaymentMethods.length} Selected',
-                          style: TextStyle(
-                            color: ThemeConfig.primaryColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              value: selectedCategories.isEmpty ? null : selectedCategories.first,
+              items: categories.map((category) {
+                return DropdownMenuItem(
+                  value: category['name'] as String,
+                  child: Text(category['name'] as String),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                if (value != null) {
+                  setState(() {
+                    selectedCategories = [value];
+                    _isFilterChanged = true;
+                  });
+                }
+              },
             ),
-
-            // Filter Content
-            Expanded(
-              child: DefaultTabController(
-                length: 3,
-                child: Column(
-                  children: [
-                    // Tab Bar
-                    TabBar(
-                      indicatorColor: ThemeConfig.primaryColor,
-                      indicatorSize: TabBarIndicatorSize.label,
-                      labelColor: ThemeConfig.primaryColor,
-                      unselectedLabelColor: Colors.grey,
-                      tabs: const [
-                        Tab(text: 'Payment Mode'),
-                        Tab(text: 'Categories'),
-                        Tab(text: 'Amount'),
-                      ],
-                    ),
-                    
-                    // Tab Content
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          // Payment Methods Tab
-                          _buildPaymentMethodsTab(),
-                          
-                          // Categories Tab
-                          _buildCategoriesTab(),
-                          
-                          // Amount Range Tab
-                          _buildAmountRangeTab(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 16),
+            // Payment Method Dropdown
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(
+                labelText: 'Select Payment Method',
+                border: OutlineInputBorder(),
               ),
+              value: selectedPaymentMethods.isEmpty ? null : selectedPaymentMethods.first,
+              items: paymentMethods.map((method) {
+                return DropdownMenuItem(
+                  value: method['name'] as String,
+                  child: Text(method['name'] as String),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                if (value != null) {
+                  setState(() {
+                    selectedPaymentMethods = [value];
+                    _isFilterChanged = true;
+                  });
+                }
+              },
             ),
-
-            // Action Buttons
-            _buildFilterActions(),
+            const SizedBox(height: 16),
+            // Action buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    _resetFilters();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Reset'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _applyFilters();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Apply'),
+                ),
+              ],
+            ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentMethodsTab() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 1.5,
-      ),
-      itemCount: paymentMethods.length,
-      itemBuilder: (context, index) {
-        final method = paymentMethods[index];
-        final isSelected = selectedPaymentMethods.contains(method['name']);
-        
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              setState(() {
-                if (isSelected) {
-                  selectedPaymentMethods.remove(method['name']);
-                } else {
-                  selectedPaymentMethods.add(method['name']);
-                }
-                _isFilterChanged = true;
-              });
-            },
-            splashColor: ThemeConfig.primaryColor.withOpacity(0.1),
-            highlightColor: ThemeConfig.primaryColor.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isSelected ? [
-                    ThemeConfig.primaryColor.withOpacity(0.3),
-                    ThemeConfig.primaryColor.withOpacity(0.1),
-                  ] : [
-                    Colors.white.withOpacity(0.1),
-                    Colors.white.withOpacity(0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected
-                      ? ThemeConfig.primaryColor
-                      : Colors.white.withOpacity(0.1),
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    method['asset'],
-                    height: 40,
-                    width: 40,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    method['name'],
-                    style: TextStyle(
-                      color: isSelected
-                          ? ThemeConfig.primaryColor
-                          : Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildCategoriesTab() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 1.5,
-      ),
-      itemCount: categories.length,
-      itemBuilder: (context, index) {
-        final category = categories[index];
-        final isSelected = selectedCategories.contains(category['name']);
-        
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              setState(() {
-                if (isSelected) {
-                  selectedCategories.remove(category['name']);
-                } else {
-                  selectedCategories.add(category['name']);
-                }
-                _isFilterChanged = true;
-              });
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isSelected ? [
-                    category['color'].withOpacity(0.3),
-                    category['color'].withOpacity(0.1),
-                  ] : [
-                    Colors.white.withOpacity(0.1),
-                    Colors.white.withOpacity(0.05),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected
-                      ? category['color']
-                      : Colors.white.withOpacity(0.1),
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    category['icon'],
-                    color: isSelected
-                        ? category['color']
-                        : Colors.white,
-                    size: 40,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    category['name'],
-                    style: TextStyle(
-                      color: isSelected
-                          ? category['color']
-                          : Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAmountRangeTab() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Select Amount Range',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildAmountDisplay('Min', _expenseRange.start),
-              _buildAmountDisplay('Max', _expenseRange.end),
-            ],
-          ),
-          const SizedBox(height: 24),
-          RangeSlider(
-            values: _expenseRange,
-            min: 0,
-            max: 10000,
-            divisions: 100,
-            activeColor: ThemeConfig.primaryColor,
-            inactiveColor: Colors.white.withOpacity(0.2),
-            labels: RangeLabels(
-              '₹${_expenseRange.start.round()}',
-              '₹${_expenseRange.end.round()}',
-            ),
-            onChanged: (values) {
-              setState(() {
-                _expenseRange = values;
-                _isFilterChanged = true;
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAmountDisplay(String label, double value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '₹${value.round()}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -458,68 +162,6 @@ class _TransactionsPageState extends State<TransactionsPage> {
       _isFilterChanged = false;
       filteredExpenses = List.from(allExpenses);
     });
-  }
-
-  Widget _buildFilterActions() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: ThemeConfig.darkColor,
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextButton(
-              onPressed: () {
-                _resetFilters();
-                Navigator.pop(context);
-              },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: Colors.white.withOpacity(0.1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Reset All'),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: FilledButton(
-              onPressed: _isFilterChanged ? () {
-                setState(() {
-                  _currentRange = _expenseRange;
-                  _applyFilters();
-                });
-                Navigator.pop(context);
-              } : null,
-              style: FilledButton.styleFrom(
-                backgroundColor: _isFilterChanged 
-                    ? ThemeConfig.primaryColor 
-                    : ThemeConfig.primaryColor.withOpacity(0.3),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                'Apply Filters',
-                style: TextStyle(
-                  color: _isFilterChanged ? Colors.white : Colors.white60,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -649,17 +291,11 @@ class _TransactionsPageState extends State<TransactionsPage> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Container(
-                  height: 22,
-                  width: 50,
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: ThemeConfig.surfaceColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Image.asset(
-                    _getPaymentIcon(index),
-                    fit: BoxFit.contain,
+                Text(
+                  expense.paymentMethod,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
                   ),
                 ),
               ],

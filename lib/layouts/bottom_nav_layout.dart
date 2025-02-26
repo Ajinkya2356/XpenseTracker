@@ -11,7 +11,7 @@ class BottomNavLayout extends StatefulWidget {
 }
 
 class _BottomNavLayoutState extends State<BottomNavLayout> {
-  int _selectedIndex = 0;
+  final int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {

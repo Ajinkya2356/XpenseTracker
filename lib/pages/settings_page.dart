@@ -558,8 +558,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       activeTrackColor: ThemeConfig.primaryColor.withOpacity(0.3),
                       inactiveThumbColor: Colors.grey[400],
                       inactiveTrackColor: ThemeConfig.surfaceColor,
-                      trackOutlineColor: MaterialStateProperty.resolveWith(
-                        (states) => states.contains(MaterialState.selected)
+                      trackOutlineColor: WidgetStateProperty.resolveWith(
+                        (states) => states.contains(WidgetState.selected)
                             ? Colors.transparent
                             : Colors.grey.withOpacity(0.2),
                       ),

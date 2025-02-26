@@ -4,7 +4,6 @@ import '../pages/transactions_page.dart';
 import '../pages/settings_page.dart';
 import '../config/theme_config.dart';
 import '../pages/notification_page.dart';
-import '../pages/settings_page.dart';
 import '../pages/qr_scanner_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,15 +16,25 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
+  final List<String> months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  String selectedMonth = 'March'; // Set default month
+
   void _onDestinationSelected(int index) {
-    // Fixed navigation logic
-    if (index == 0) {
+    if (index == 1) {
+      // QR Scanner
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const QRScannerPage(),
+        ),
+      );
+    } else {
+      // Update currentIndex for Home (0) and Expenses (2)
       setState(() {
-        _currentIndex = 0;
-      });
-    } else if (index == 1) {
-      setState(() {
-        _currentIndex = 1;
+        _currentIndex = index == 2 ? 1 : 0;
       });
     }
   }
@@ -134,42 +143,6 @@ class _HomePageState extends State<HomePage> {
         color: ThemeConfig.backgroundColor, // Changed from gradient to solid color
         child: pages[_currentIndex],
       ),
-      floatingActionButton: Container(
-        height: 65,
-        width: 65,
-        margin: const EdgeInsets.only(top: 25), // Adjusted top margin
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.lightBlueAccent,
-              ThemeConfig.primaryColor,
-              ThemeConfig.darkBlue,
-            ],
-          ),
-          shape: BoxShape.circle,
-          // Removed boxShadow property
-        ),
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const QRScannerPage(),
-              ),
-            );
-          },
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          child: const Icon(
-            Icons.qr_code_scanner,
-            size: 40, // Increased icon size
-            color: Colors.white,
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(
           navigationBarTheme: NavigationBarThemeData(
@@ -180,34 +153,59 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        child: BottomAppBar(
+        child: NavigationBar(
           height: 65,
-          padding: const EdgeInsets.symmetric(horizontal: 8), // Added padding
-          color: ThemeConfig.surfaceColor,
-          shape: const CircularNotchedRectangle(), // Added notch
-          notchMargin: 8, // Increased notch margin for more space
-          clipBehavior: Clip.antiAlias, // Added smooth clipping
-          child: NavigationBar(
-            height: 65,
-            backgroundColor: Colors.transparent, // Made transparent to show BottomAppBar
-            elevation: 0, // Removed elevation
-            indicatorColor: ThemeConfig.primaryColor.withOpacity(0.1),
-            selectedIndex: _currentIndex,
-            onDestinationSelected: _onDestinationSelected,
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: 'Home',
+          backgroundColor: ThemeConfig.surfaceColor,
+          elevation: 0,
+          indicatorColor: ThemeConfig.primaryColor.withOpacity(0.1),
+          selectedIndex: _currentIndex == 1 ? 2 : _currentIndex, // Map internal index to UI index
+          onDestinationSelected: _onDestinationSelected,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: [
+            const NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Container(
+                height: 56, // Increased from 45
+                width: 56,  // Increased from 45
+                margin: const EdgeInsets.only(top: 8), // Added margin to lift the button up
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.blue[300]!,
+                      Colors.blue[500]!,
+                      Colors.blue[700]!,
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withOpacity(0.3),
+                      spreadRadius: 2,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.qr_code_scanner,
+                  color: Colors.white,
+                  size: 32, // Increased from 24
+                ),
               ),
-              NavigationDestination(
-                icon: Icon(Icons.receipt_long_outlined),
-                selectedIcon: Icon(Icons.receipt_long),
-                label: 'Expenses',
-              ),
-            ],
-          ),
+              label: '', // Removed the 'Scan' label
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.receipt_long_outlined),
+              selectedIcon: Icon(Icons.receipt_long),
+              label: 'Expenses',
+            ),
+          ],
         ),
       ),
     );
