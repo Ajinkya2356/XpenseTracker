@@ -11,7 +11,7 @@ class DashboardPage extends StatefulWidget {  // Changed to StatefulWidget
 
 class _DashboardPageState extends State<DashboardPage> {
   late PageController _pageController;
-  int _currentPage = 0;
+  final int _currentPage = 0;
   String selectedMonth = DateTime.now().month.toString();
   // Mock data for expenses
   final Map<String, Map<String, dynamic>> monthlyStats = {
@@ -918,7 +918,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   Text(
-                    '₹${categories[category]} (${percentage}%)',
+                    '₹${categories[category]} ($percentage%)',
                     style: const TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 14,

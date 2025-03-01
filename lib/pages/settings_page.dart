@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/theme_config.dart';
+import 'edit_profile_page.dart'; // Make sure to add this import
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -218,150 +219,9 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showEditProfile() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: BoxDecoration(
-          color: ThemeConfig.darkColor, // Changed from gradient to solid color
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          border: Border.all(
-            color: ThemeConfig.primaryColor.withOpacity(0.2),
-          ),
-        ),
-        child: Column(
-          children: [
-            // Handle and Title
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Edit Profile',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close),
-                        color: Colors.white,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Profile Picture
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Stack(
-                children: [
-                  const CircleAvatar(
-                    radius: 50,
-                    backgroundImage: AssetImage('assets/images/profile.jpg'),
-                  ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: ThemeConfig.primaryColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: ThemeConfig.darkBlue,
-                          width: 3,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Form Fields
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    _buildEditField(
-                      label: 'Full Name',
-                      value: 'John Doe',
-                      icon: Icons.person_outline,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildEditField(
-                      label: 'Email',
-                      value: 'john.doe@example.com',
-                      icon: Icons.email_outlined,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildEditField(
-                      label: 'Phone',
-                      value: '+1 234 567 890',
-                      icon: Icons.phone_outlined,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Save Button
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              child: FilledButton(
-                onPressed: () => Navigator.pop(context),
-                style: FilledButton.styleFrom(
-                  backgroundColor: ThemeConfig.primaryColor,
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Save Changes'),
-              ),
-            ),
-          ],
-        ),
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const EditProfilePage()),
     );
   }
 

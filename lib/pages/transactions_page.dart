@@ -449,7 +449,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          }),
                         ],
                         onSelected: (value) {
                           setState(() {

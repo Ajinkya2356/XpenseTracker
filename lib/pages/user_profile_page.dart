@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/theme_config.dart';
+import 'edit_profile_page.dart';
 
 class UserProfilePage extends StatelessWidget {
   const UserProfilePage({super.key});
@@ -13,61 +14,10 @@ class UserProfilePage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              // Show edit dialog with theme override
-              showDialog(
-                context: context,
-                builder: (context) => Theme(
-                  data: Theme.of(context).copyWith(
-                    // Override text field colors
-                    inputDecorationTheme: const InputDecorationTheme(
-                      labelStyle: TextStyle(color: Colors.grey),
-                      hintStyle: TextStyle(color: Colors.grey),
-                    ),
-                    textTheme: const TextTheme(
-                      titleLarge: TextStyle(color: Colors.black), // Dialog title
-                      bodyMedium: TextStyle(color: Colors.black), // Text field text
-                    ),
-                  ),
-                  child: AlertDialog(
-                    backgroundColor: Colors.white,
-                    title: const Text('Edit Profile'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextField(
-                          decoration: const InputDecoration(
-                            labelText: 'Name',
-                            border: OutlineInputBorder(),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            border: OutlineInputBorder(),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Save changes logic here
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Save'),
-                      ),
-                    ],
-                  ),
-                ),
+              // Navigate to EditProfilePage instead of showing a dialog
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EditProfilePage()),
               );
             },
           ),

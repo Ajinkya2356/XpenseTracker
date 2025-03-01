@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/theme_config.dart';
+import 'edit_profile_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -58,7 +59,12 @@ class ProfilePage extends StatelessWidget {
                     leading: const Icon(Icons.person_outline),
                     title: const Text('Edit Profile'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => const EditProfilePage())
+                      );
+                    },
                   ),
                   const Divider(),
                   ListTile(
