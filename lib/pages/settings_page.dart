@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/theme_config.dart';
 import 'edit_profile_page.dart'; // Make sure to add this import
 
@@ -13,6 +16,38 @@ class _SettingsPageState extends State<SettingsPage> {
   bool notificationsEnabled = true;
   String selectedCurrency = '₹'; // Add this line
   String selectedCurrencyName = 'Indian Rupee'; // Add this line
+  bool _isLoading = true;
+  Map<String, dynamic>? _userProfile;
+  final _supabase = Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
+
+      final response = await _supabase
+          .from('user_profiles')
+          .select()
+          .eq('id', user.id)
+          .single();
+
+      setState(() {
+        _userProfile = response;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+      setState(() => _isLoading = false);
+    }
+  }
 
   final List<Map<String, String>> currencies = [ // Add currency list
     {'symbol': '₹', 'name': 'Indian Rupee', 'code': 'INR'},
@@ -315,27 +350,25 @@ class _SettingsPageState extends State<SettingsPage> {
     return CircleAvatar(
       radius: 50,
       backgroundColor: ThemeConfig.surfaceColor,
-      // Use default icon if image fails to load
-      child: ClipOval(
-        child: Image.asset(
-          'assets/images/profile.jpg',
-          width: 100,
-          height: 100,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Icon(
-              Icons.person,
-              size: 50,
-              color: ThemeConfig.primaryColor,
-            );
-          },
-        ),
-      ),
+      child: _userProfile?['profile_image_url'] != null
+          ? ClipOval(
+              child: Image.network(
+                _userProfile!['profile_image_url'],
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.person, size: 50, color: ThemeConfig.primaryColor),
+              ),
+            )
+          : Icon(Icons.person, size: 50, color: ThemeConfig.primaryColor),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: Container(
@@ -354,108 +387,116 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: Colors.transparent,
       ),
       backgroundColor: ThemeConfig.backgroundColor,
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Profile Card
-          Card(
-            elevation: 0,
-            margin: EdgeInsets.zero,
-            child: Padding(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildProfileImage(),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'John Doe',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    'john.doe@example.com',
-                    style: TextStyle(color: Colors.grey[400]),
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton(
-                    onPressed: _showEditProfile,
-                    child: const Text('Edit Profile'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Settings List
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              switch (index) {
-                case 0:
-                  return _buildSettingCard(
-                    title: 'Currency',
-                    subtitle: '$selectedCurrencyName ($selectedCurrency)',
-                    icon: Icons.currency_exchange,
-                    color: Colors.green,
-                    onTap: () => _showCurrencyPicker(context),
-                  );
-                case 1:
-                  return _buildSettingCard(
-                    title: 'Notifications',
-                    subtitle: notificationsEnabled ? 'Notifications are enabled' : 'Notifications are disabled',
-                    icon: Icons.notifications_active,
-                    color: notificationsEnabled ? Colors.orange : Colors.grey,
-                    onTap: () {
-                      setState(() => notificationsEnabled = !notificationsEnabled);
-                    },
-                    trailing: Switch(
-                      value: notificationsEnabled,
-                      onChanged: (value) => setState(() => notificationsEnabled = value),
-                      activeColor: ThemeConfig.primaryColor,
-                      activeTrackColor: ThemeConfig.primaryColor.withOpacity(0.3),
-                      inactiveThumbColor: Colors.grey[400],
-                      inactiveTrackColor: ThemeConfig.surfaceColor,
-                      trackOutlineColor: WidgetStateProperty.resolveWith(
-                        (states) => states.contains(WidgetState.selected)
-                            ? Colors.transparent
-                            : Colors.grey.withOpacity(0.2),
-                      ),
+              children: [
+                // Profile Card
+                Card(
+                  elevation: 0,
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _buildProfileImage(),
+                        const SizedBox(height: 12),
+                        Text(
+                          _userProfile?['full_name'] ?? 'No Name',
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          _userProfile?['email'] ?? 'No Email',
+                          style: TextStyle(color: Colors.grey[400]),
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton(
+                          onPressed: _showEditProfile,
+                          child: const Text('Edit Profile'),
+                        ),
+                      ],
                     ),
-                  );
-                case 2:
-                  return _buildSettingCard(
-                    title: 'About App',
-                    subtitle: 'Version 1.0.0',
-                    icon: Icons.info_outline,
-                    color: Colors.blue,
-                    onTap: _showAboutDialog,
-                  );
-                case 3:
-                  return _buildSettingCard(
-                    title: 'Clear All Data',
-                    subtitle: 'Remove all expenses and settings',
-                    icon: Icons.delete_outline,
-                    color: ThemeConfig.expenseRed,
-                    onTap: () => _showDeleteConfirmation(context),
-                  );
-                case 4:
-                  return _buildSettingCard(
-                    title: 'Sign Out',
-                    subtitle: 'Log out from your account',
-                    icon: Icons.logout,
-                    color: ThemeConfig.expenseRed,
-                    onTap: _showSignOutConfirmation,
-                  );
-                default:
-                  return const SizedBox.shrink();
-              }
-            },
-          ),
-        ],
-      ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Settings List
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: 5,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    switch (index) {
+                      case 0:
+                        return _buildSettingCard(
+                          title: 'Currency',
+                          subtitle: '$selectedCurrencyName ($selectedCurrency)',
+                          icon: Icons.currency_exchange,
+                          color: Colors.green,
+                          onTap: () => _showCurrencyPicker(context),
+                        );
+                      case 1:
+                        return _buildSettingCard(
+                          title: 'Notifications',
+                          subtitle: notificationsEnabled ? 'Notifications are enabled' : 'Notifications are disabled',
+                          icon: Icons.notifications_active,
+                          color: notificationsEnabled ? Colors.orange : Colors.grey,
+                          onTap: () {
+                            setState(() => notificationsEnabled = !notificationsEnabled);
+                          },
+                          trailing: Switch(
+                            value: notificationsEnabled,
+                            onChanged: (value) => setState(() => notificationsEnabled = value),
+                            activeColor: ThemeConfig.primaryColor,
+                            activeTrackColor: ThemeConfig.primaryColor.withOpacity(0.3),
+                            inactiveThumbColor: Colors.grey[400],
+                            inactiveTrackColor: ThemeConfig.surfaceColor,
+                            trackOutlineColor: WidgetStateProperty.resolveWith(
+                              (states) => states.contains(WidgetState.selected)
+                                  ? Colors.transparent
+                                  : Colors.grey.withOpacity(0.2),
+                            ),
+                          ),
+                        );
+                      case 2:
+                        return _buildSettingCard(
+                          title: 'About App',
+                          subtitle: 'Version 1.0.0',
+                          icon: Icons.info_outline,
+                          color: Colors.blue,
+                          onTap: _showAboutDialog,
+                        );
+                      case 3:
+                        return _buildSettingCard(
+                          title: 'Clear All Data',
+                          subtitle: 'Remove all expenses and settings',
+                          icon: Icons.delete_outline,
+                          color: ThemeConfig.expenseRed,
+                          onTap: () => _showDeleteConfirmation(context),
+                        );
+                      case 4:
+                        return _buildSettingCard(
+                          title: 'Sign Out',
+                          subtitle: 'Log out from your account',
+                          icon: Icons.logout,
+                          color: ThemeConfig.expenseRed,
+                          onTap: () async {
+                            await authService.signOut();
+                            if (mounted) {
+                              Navigator.of(context).pushReplacementNamed('/login');
+                            }
+                          },
+                        );
+                      default:
+                        return const SizedBox.shrink();
+                    }
+                  },
+                ),
+              ],
+            ),
     );
   }
 
