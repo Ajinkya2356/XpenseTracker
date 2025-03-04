@@ -67,7 +67,7 @@ class UpiQrData {
     );
   }
 
-  Map<String, dynamic> toExpenseData(String userId) {
+  Map<String, dynamic> toExpenseData(String userId, {String? upiApp, String? transactionId}) {
     return {
       'user_id': userId,
       'category_id': 'ecfd388f-6cda-40f3-a1d0-66df131d113a', // Default category
@@ -76,7 +76,10 @@ class UpiQrData {
       'merchant_name': merchantName ?? payeeName,
       'expense_date': DateTime.now().toIso8601String(),
       'payment_method': 'UPI',
+      'upi_app': upiApp,
+      'upi_transaction_id': transactionId,
       'qr_data': rawQrData,
+      'created_at': DateTime.now().toIso8601String(),
     };
   }
 

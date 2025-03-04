@@ -146,11 +146,64 @@ class _QRScannerPageState extends State<QRScannerPage> {
         throw Exception('User not logged in');
       }
 
-      // Get user consent and amount
+      // For personal QRs or QRs without amount, directly launch UPI app
+      if (upiData.isPersonalQr) {
+        // Just save basic info and let UPI app handle amount/note
+        final expenseData = {
+          'user_id': user.id,
+          'category_id': 'ecfd388f-6cda-40f3-a1d0-66df131d113a',
+          'amount': 0, // Will be updated later
+          'merchant_name': upiData.getDisplayName(),
+          'expense_date': DateTime.now().toIso8601String(),
+          'payment_method': 'UPI',
+          'qr_data': qrData,
+          'created_at': DateTime.now().toIso8601String(),
+        };
+
+        // Insert into Supabase
+        final response = await supabase
+            .from('expenses')
+            .insert(expenseData)
+            .select()
+            .single();
+
+        final expenseId = response['expense_id'];
+
+        // Launch UPI directly
+        if (mounted) {
+          final success = await UpiService.launchUpiUrl(upiData.rawQrData);
+          if (success) {
+            // Show a snackbar asking user to update amount later
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Please update the expense amount after payment'),
+                duration: const Duration(seconds: 4),
+                action: SnackBarAction(
+                  label: 'Update Now',
+                  onPressed: () => _showUpdateExpenseDialog(), // Fixed: Wrap in anonymous function
+                ),
+              ),
+            );
+            Navigator.pop(context); // Return to previous screen
+          }
+        }
+        return;
+      }
+
+      // For business QRs with preset amount, show quick confirmation
+      if (upiData.isBusinessQr && upiData.hasPresetAmount) {
+        // Show quick confirmation chip
+        if (mounted) {
+          _showQuickConfirmation(context, upiData);
+        }
+        return;
+      }
+
+      // For other cases, show full amount input dialog
       final (hasConsent, confirmedAmount) = await _getConsentForAmount(
         context, 
         upiData.amount ?? 0.0,
-        upiData.payeeName ?? upiData.payeeVpa ?? 'Unknown'
+        upiData.getDisplayName()
       );
 
       if (!hasConsent || confirmedAmount == null) {
@@ -164,9 +217,13 @@ class _QRScannerPageState extends State<QRScannerPage> {
 
       // Update UPI data with confirmed amount
       final updatedQrData = upiData.copyWithAmount(confirmedAmount);
-
-      // Prepare expense data
-      final expenseData = updatedQrData.toExpenseData(user.id);
+      
+      final userSettings = Provider.of<UserSettings>(context, listen: false);
+      final expenseData = updatedQrData.toExpenseData(
+        user.id,
+        upiApp: userSettings.defaultUpiApp,
+        transactionId: DateTime.now().millisecondsSinceEpoch.toString(),
+      );
 
       // Insert into Supabase
       final response = await supabase
@@ -187,6 +244,77 @@ class _QRScannerPageState extends State<QRScannerPage> {
         );
       }
     }
+  }
+
+  void _showQuickConfirmation(BuildContext context, UpiQrData upiData) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: ThemeConfig.darkColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: ThemeConfig.primaryColor.withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            upiData.getDisplayName(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '₹${upiData.amount?.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: ThemeConfig.primaryColor,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    FilledButton.icon(
+                      onPressed: () async {
+                        final success = await UpiService.launchUpiUrl(upiData.rawQrData);
+                        if (success && mounted) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      icon: const Icon(Icons.check_circle),
+                      label: const Text('Pay Now'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: ThemeConfig.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showPaymentConfirmation(BuildContext context, UpiQrData upiData, String expenseId) {
@@ -273,6 +401,148 @@ class _QRScannerPageState extends State<QRScannerPage> {
         ),
       ),
     );
+  }
+
+  void _showUpdateExpenseDialog() {
+    final TextEditingController amountController = TextEditingController();
+    final TextEditingController noteController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: ThemeConfig.darkColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: ThemeConfig.primaryColor.withOpacity(0.2),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Update Expense',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Amount Input
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: ThemeConfig.primaryColor.withOpacity(0.3),
+                  ),
+                ),
+                child: TextField(
+                  controller: amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Enter amount',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    prefixText: '₹ ',
+                    prefixStyle: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Note Input
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: ThemeConfig.primaryColor.withOpacity(0.3),
+                  ),
+                ),
+                child: TextField(
+                  controller: noteController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Add note (optional)',
+                    hintStyle: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () async {
+                        try {
+                          final user = Supabase.instance.client.auth.currentUser;
+                          if (user == null) throw Exception('No user logged in');
+
+                          final amount = double.tryParse(amountController.text);
+                          if (amount == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please enter a valid amount')),
+                            );
+                            return;
+                          }
+
+                          await Supabase.instance.client
+                              .from('expenses')
+                              .update({
+                                'amount': amount,
+                                'description': noteController.text.trim(),
+                                'updated_at': DateTime.now().toIso8601String(),
+                                'expense_date': DateTime.now().toIso8601String(),
+                              })
+                              .eq('user_id', user.id);
+
+                          if (mounted) {
+                            Navigator.pop(context); // Close dialog
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Expense updated successfully')),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error updating expense: $e')),
+                            );
+                          }
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: ThemeConfig.primaryColor,
+                      ),
+                      child: const Text('Update'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((_) {
+      // Clean up controllers
+      amountController.dispose();
+      noteController.dispose();
+    });
   }
 
   @override
