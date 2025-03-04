@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/theme_config.dart';
+import '../models/upi_qr_data.dart';
+import '../services/upi_service.dart';
+import '../services/user_settings_service.dart';
+import 'package:provider/provider.dart';
 
 class QRScannerPage extends StatefulWidget {
   const QRScannerPage({super.key});
@@ -11,6 +16,131 @@ class QRScannerPage extends StatefulWidget {
 
 class _QRScannerPageState extends State<QRScannerPage> {
   final MobileScannerController controller = MobileScannerController();
+
+  Future<void> _processQrCode(String qrData) async {
+    try {
+      final upiData = UpiQrData.fromQrString(qrData);
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      
+      if (user == null) {
+        throw Exception('User not logged in');
+      }
+
+      if (upiData.amount == null || upiData.payeeVpa == null) {
+        throw Exception('Invalid QR code: Missing required data');
+      }
+
+      // Prepare expense data
+      final expenseData = upiData.toExpenseData(user.id);
+
+      // Insert into Supabase
+      final response = await supabase
+          .from('expenses')
+          .insert(expenseData)
+          .select()
+          .single();
+
+      final expenseId = response['expense_id'];
+
+      // Show confirmation and proceed to payment
+      if (mounted) {
+        _showPaymentConfirmation(context, upiData, expenseId);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error processing QR code: $e')),
+        );
+      }
+    }
+  }
+
+  void _showPaymentConfirmation(BuildContext context, UpiQrData upiData, String expenseId) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: ThemeConfig.darkColor,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ...handle and title widgets...
+            ListTile(
+              title: const Text('Payee Name', style: TextStyle(color: Colors.grey)),
+              subtitle: Text(
+                upiData.payeeName ?? 'Unknown',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+            ListTile(
+              title: const Text('Amount', style: TextStyle(color: Colors.grey)),
+              subtitle: Text(
+                '₹${upiData.amount?.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (upiData.transactionNote != null)
+              ListTile(
+                title: const Text('Note', style: TextStyle(color: Colors.grey)),
+                subtitle: Text(
+                  upiData.transactionNote!,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () async {
+                try {
+                  // Launch the UPI URL directly
+                  final success = await UpiService.launchUpiUrl(upiData.rawQrData);
+
+                  if (success && mounted) {
+                    // Update the expense with UPI transaction details
+                    await Supabase.instance.client
+                        .from('expenses')
+                        .update({
+                          'upi_transaction_id': DateTime.now().millisecondsSinceEpoch.toString(),
+                        })
+                        .eq('expense_id', expenseId);
+
+                    Navigator.of(context).pop(); // Close bottom sheet
+                    Navigator.of(context).pop(); // Return to previous screen
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Payment initiated successfully')),
+                    );
+                  } else {
+                    throw Exception('Failed to launch UPI payment');
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Payment failed: $e')),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.payment),
+              label: const Text('Proceed to Payment'),
+              style: FilledButton.styleFrom(
+                backgroundColor: ThemeConfig.primaryColor,
+                minimumSize: const Size(double.infinity, 45),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,10 +154,9 @@ class _QRScannerPageState extends State<QRScannerPage> {
             onDetect: (capture) {
               final List<Barcode> barcodes = capture.barcodes;
               for (final barcode in barcodes) {
-                debugPrint('UPI QR Code: ${barcode.rawValue}');
-                // Handle the scanned QR code here
-                // You can parse UPI details and create a transaction
-                _showQRCodeResult(context, barcode.rawValue ?? 'Invalid QR Code');
+                if (barcode.rawValue != null) {
+                  _processQrCode(barcode.rawValue!);
+                }
               }
             },
           ),

@@ -1,104 +1,99 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'local_storage_service.dart';
 
-class UserSettings with ChangeNotifier {
-  final SupabaseClient _supabase;
-  final LocalStorageService _localStorage;
-  
+class UserSettings extends ChangeNotifier {
+  final _supabase = Supabase.instance.client;
   String _currencyCode = 'INR';
   String _currencySymbol = '₹';
   String? _defaultUpiApp;
-  bool _isDirty = false;
+  bool _isLoading = true;
 
-  UserSettings(this._supabase, this._localStorage) {
-    _loadFromLocal();
-  }
-
-  // Getters
   String get currencyCode => _currencyCode;
   String get currencySymbol => _currencySymbol;
   String? get defaultUpiApp => _defaultUpiApp;
+  bool get isLoading => _isLoading;
 
-  Future<void> _loadFromLocal() async {
-    final settings = _localStorage.getUserSettings();
-    if (settings != null) {
-      _currencyCode = settings['currency_code'] ?? 'INR';
-      _currencySymbol = settings['currency_symbol'] ?? '₹';
-      _defaultUpiApp = settings['default_upi_app'];
-      notifyListeners();
-    } else {
-      await _loadFromDatabase();
-    }
-  }
-
-  Future<void> _loadFromDatabase() async {
+  Future<void> loadUserSettings() async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) return;
+      final user = _supabase.auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
 
       final response = await _supabase
           .from('user_settings')
           .select()
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
           .single();
 
-      if (response != null) {
-        _currencyCode = response['currency_code'] ?? 'INR';
-        _currencySymbol = response['currency_symbol'] ?? '₹';
-        _defaultUpiApp = response['default_upi_app'];
-        
-        // Save to local storage
-        await _saveToLocal();
-        notifyListeners();
-      }
+      _currencyCode = response['currency_code'] ?? 'INR';
+      _currencySymbol = response['currency_symbol'] ?? '₹';
+      _defaultUpiApp = response['default_upi_app'];
+      _isLoading = false;
+      notifyListeners();
     } catch (e) {
-      debugPrint('Error loading settings from DB: $e');
+      // If no settings exist, create default settings
+      await _createDefaultSettings();
     }
   }
 
-  Future<void> _saveToLocal() async {
-    await _localStorage.saveUserSettings({
-      'currency_code': _currencyCode,
-      'currency_symbol': _currencySymbol,
-      'default_upi_app': _defaultUpiApp,
-    });
-  }
-
-  Future<void> syncToDatabase() async {
-    if (!_isDirty) return;
-
+  Future<void> _createDefaultSettings() async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) return;
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
 
       await _supabase.from('user_settings').upsert({
-        'user_id': userId,
-        'currency_code': _currencyCode,
-        'currency_symbol': _currencySymbol,
-        'default_upi_app': _defaultUpiApp,
+        'user_id': user.id,
+        'currency_code': 'INR',
+        'currency_symbol': '₹',
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
       });
 
-      _isDirty = false;
+      _currencyCode = 'INR';
+      _currencySymbol = '₹';
+      _isLoading = false;
+      notifyListeners();
     } catch (e) {
-      debugPrint('Error syncing settings to DB: $e');
+      debugPrint('Error creating default settings: $e');
     }
   }
 
   Future<void> updateCurrency(String code, String symbol) async {
-    _currencyCode = code;
-    _currencySymbol = symbol;
-    _isDirty = true;
-    await _saveToLocal();
-    notifyListeners();
-    await syncToDatabase();
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      await _supabase.from('user_settings').upsert({
+        'user_id': user.id,
+        'currency_code': code,
+        'currency_symbol': symbol,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      _currencyCode = code;
+      _currencySymbol = symbol;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating currency: $e');
+      rethrow;
+    }
   }
 
-  Future<void> updateDefaultUpiApp(String packageName) async {
-    _defaultUpiApp = packageName;
-    _isDirty = true;
-    await _saveToLocal();
-    notifyListeners();
-    await syncToDatabase();
+  Future<void> updateDefaultUpiApp(String appName) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      await _supabase.from('user_settings').upsert({
+        'user_id': user.id,
+        'default_upi_app': appName,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      _defaultUpiApp = appName;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating default UPI app: $e');
+      rethrow;
+    }
   }
 }
