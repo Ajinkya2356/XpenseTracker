@@ -105,26 +105,26 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             actions: [
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.notifications_none_outlined),
-                  iconSize: 24,
-                  color: Colors.white,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const NotificationPage(),
-                      ),
-                    );
-                  },
-                ),
-              ),
+              // Container(
+              //   margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              //   decoration: BoxDecoration(
+              //     color: Colors.white.withOpacity(0.2),
+              //     borderRadius: BorderRadius.circular(12),
+              //   ),
+              //   child: IconButton(
+              //     icon: const Icon(Icons.notifications_none_outlined),
+              //     iconSize: 24,
+              //     color: Colors.white,
+              //     onPressed: () {
+              //       Navigator.push(
+              //         context,
+              //         MaterialPageRoute(
+              //           builder: (context) => const NotificationPage(),
+              //         ),
+              //       );
+              //     },
+              //   ),
+              // ),
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                 decoration: BoxDecoration(

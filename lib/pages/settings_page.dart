@@ -4,6 +4,10 @@ import '../services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/theme_config.dart';
 import 'edit_profile_page.dart'; // Make sure to add this import
+import '../services/user_settings_service.dart';
+import '../services/upi_service.dart';
+import 'package:installed_apps/app_info.dart';
+import '../widgets/upi_app_setting_card.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -13,17 +17,16 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool notificationsEnabled = true;
-  String selectedCurrency = '₹'; // Add this line
-  String selectedCurrencyName = 'Indian Rupee'; // Add this line
   bool _isLoading = true;
   Map<String, dynamic>? _userProfile;
   final _supabase = Supabase.instance.client;
+  List<AppInfo> _installedUpiApps = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
+    _loadUpiApps();
   }
 
   Future<void> _loadUserProfile() async {
@@ -46,6 +49,24 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       debugPrint('Error loading user profile: $e');
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadUpiApps() async {
+    try {
+      debugPrint('Loading UPI apps...');
+      final apps = await UpiService.getInstalledUpiApps();
+      debugPrint('Loaded ${apps.length} UPI apps');
+      if (mounted) {
+        setState(() => _installedUpiApps = apps);
+      }
+    } catch (e) {
+      debugPrint('Error loading UPI apps: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading UPI apps: $e')),
+        );
+      }
     }
   }
 
@@ -368,6 +389,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final userSettings = Provider.of<UserSettings>(context);
     
     return Scaffold(
       appBar: AppBar(
@@ -426,42 +448,30 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: 5,
+                  itemCount: 4, // Reduced from 6 to 4 items
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     switch (index) {
                       case 0:
+                        // Currency Setting
+                        final currentCurrency = currencies.firstWhere(
+                          (c) => c['code'] == userSettings.currencyCode,
+                          orElse: () => currencies.first,
+                        );
                         return _buildSettingCard(
                           title: 'Currency',
-                          subtitle: '$selectedCurrencyName ($selectedCurrency)',
+                          subtitle: '${currentCurrency['name']} (${currentCurrency['symbol']})',
                           icon: Icons.currency_exchange,
                           color: Colors.green,
                           onTap: () => _showCurrencyPicker(context),
                         );
                       case 1:
-                        return _buildSettingCard(
-                          title: 'Notifications',
-                          subtitle: notificationsEnabled ? 'Notifications are enabled' : 'Notifications are disabled',
-                          icon: Icons.notifications_active,
-                          color: notificationsEnabled ? Colors.orange : Colors.grey,
-                          onTap: () {
-                            setState(() => notificationsEnabled = !notificationsEnabled);
-                          },
-                          trailing: Switch(
-                            value: notificationsEnabled,
-                            onChanged: (value) => setState(() => notificationsEnabled = value),
-                            activeColor: ThemeConfig.primaryColor,
-                            activeTrackColor: ThemeConfig.primaryColor.withOpacity(0.3),
-                            inactiveThumbColor: Colors.grey[400],
-                            inactiveTrackColor: ThemeConfig.surfaceColor,
-                            trackOutlineColor: WidgetStateProperty.resolveWith(
-                              (states) => states.contains(WidgetState.selected)
-                                  ? Colors.transparent
-                                  : Colors.grey.withOpacity(0.2),
-                            ),
-                          ),
+                        // UPI App Setting
+                        return UpiAppSettingCard(
+                          onTap: () => _showUpiAppPicker(context),
                         );
                       case 2:
+                        // About App
                         return _buildSettingCard(
                           title: 'About App',
                           subtitle: 'Version 1.0.0',
@@ -470,14 +480,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           onTap: _showAboutDialog,
                         );
                       case 3:
-                        return _buildSettingCard(
-                          title: 'Clear All Data',
-                          subtitle: 'Remove all expenses and settings',
-                          icon: Icons.delete_outline,
-                          color: ThemeConfig.expenseRed,
-                          onTap: () => _showDeleteConfirmation(context),
-                        );
-                      case 4:
+                        // Sign Out
                         return _buildSettingCard(
                           title: 'Sign Out',
                           subtitle: 'Log out from your account',
@@ -494,6 +497,38 @@ class _SettingsPageState extends State<SettingsPage> {
                         return const SizedBox.shrink();
                     }
                   },
+                ),
+
+                // Disabled Features Notice
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.amber.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.amber[600],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Notifications and data management features coming soon!',
+                          style: TextStyle(
+                            color: Colors.amber[600],
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -578,9 +613,11 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showCurrencyPicker(BuildContext context) {
+    final userSettings = Provider.of<UserSettings>(context, listen: false);
+    
     showModalBottomSheet(
       context: context,
-      backgroundColor: ThemeConfig.darkColor, // Changed from surfaceColor
+      backgroundColor: ThemeConfig.darkColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -615,17 +652,30 @@ class _SettingsPageState extends State<SettingsPage> {
                 itemCount: currencies.length,
                 itemBuilder: (context, index) {
                   final currency = currencies[index];
-                  final isSelected = currency['symbol'] == selectedCurrency;
+                  final isSelected = currency['code'] == userSettings.currencyCode;
                   
                   return Material(
                     color: Colors.transparent,
                     child: ListTile(
-                      onTap: () {
-                        setState(() {
-                          selectedCurrency = currency['symbol']!;
-                          selectedCurrencyName = currency['name']!;
-                        });
-                        Navigator.pop(context);
+                      onTap: () async {
+                        try {
+                          await userSettings.updateCurrency(
+                            currency['code']!,
+                            currency['symbol']!,
+                          );
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Currency updated successfully')),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error updating currency: $e')),
+                            );
+                          }
+                        }
                       },
                       leading: Container(
                         padding: const EdgeInsets.all(8),
@@ -667,6 +717,84 @@ class _SettingsPageState extends State<SettingsPage> {
                             )
                           : null,
                     ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUpiAppPicker(BuildContext context) {
+    final userSettings = Provider.of<UserSettings>(context, listen: false);
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: ThemeConfig.darkColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey[600],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text(
+              'Select Default UPI App',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _installedUpiApps.length,
+                itemBuilder: (context, index) {
+                  final app = _installedUpiApps[index];
+                  final isSelected = userSettings.defaultUpiApp == app.packageName;
+                  
+                  return ListTile(
+                    onTap: () async {
+                      await userSettings.updateDefaultUpiApp(app.packageName);
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Default UPI app set to ${UpiService.getAppDisplayName(app.packageName)}'
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    leading: Image.memory(
+                      app.icon!,
+                      width: 40,
+                      height: 40,
+                    ),
+                    title: Text(
+                      UpiService.getAppDisplayName(app.packageName),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    trailing: isSelected
+                        ? Icon(
+                            Icons.check_circle,
+                            color: ThemeConfig.primaryColor,
+                          )
+                        : null,
                   );
                 },
               ),
