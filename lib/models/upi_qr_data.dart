@@ -42,6 +42,31 @@ class UpiQrData {
     );
   }
 
+  UpiQrData copyWithAmount(double newAmount) {
+    String updatedQrData = rawQrData;
+    
+    // Update amount in QR data
+    if (rawQrData.contains('am=')) {
+      updatedQrData = rawQrData.replaceFirst(
+        RegExp(r'am=\d+(\.\d+)?'),
+        'am=$newAmount'
+      );
+    } else {
+      // Add amount if not present
+      updatedQrData += '&am=$newAmount';
+    }
+
+    return UpiQrData(
+      payeeName: payeeName,
+      payeeVpa: payeeVpa,
+      amount: newAmount,
+      transactionNote: transactionNote,
+      merchantCode: merchantCode,
+      merchantName: merchantName,
+      rawQrData: updatedQrData,
+    );
+  }
+
   Map<String, dynamic> toExpenseData(String userId) {
     return {
       'user_id': userId,
@@ -53,5 +78,23 @@ class UpiQrData {
       'payment_method': 'UPI',
       'qr_data': rawQrData,
     };
+  }
+
+  bool get isPersonalQr => merchantCode == null && merchantName == null;
+  bool get hasPresetAmount => amount != null;
+
+  // Add a helper method to determine if we need amount input
+  bool needsAmountInput() {
+    return !hasPresetAmount || isPersonalQr;
+  }
+
+  // Add method to determine if it's a business QR
+  bool get isBusinessQr => merchantCode != null || merchantName != null;
+
+  // Add method to get display name
+  String getDisplayName() {
+    if (merchantName != null) return merchantName!;
+    if (payeeName != null) return payeeName!;
+    return payeeVpa ?? 'Unknown';
   }
 }

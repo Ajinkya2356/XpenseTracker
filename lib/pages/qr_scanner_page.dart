@@ -16,6 +16,125 @@ class QRScannerPage extends StatefulWidget {
 
 class _QRScannerPageState extends State<QRScannerPage> {
   final MobileScannerController controller = MobileScannerController();
+  final TextEditingController _amountController = TextEditingController();
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<(bool, double?)> _getConsentForAmount(BuildContext context, double suggestedAmount, String payeeName) async {
+    _amountController.text = suggestedAmount.toStringAsFixed(2);
+    
+    final result = await showDialog<(bool, double?)>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: ThemeConfig.darkColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: ThemeConfig.primaryColor.withOpacity(0.2),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.payment,
+                  size: 48,
+                  color: ThemeConfig.primaryColor,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Confirm Payment',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Payment to $payeeName',
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: ThemeConfig.primaryColor.withOpacity(0.3),
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _amountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      prefixText: '₹ ',
+                      prefixStyle: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, (false, null)),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          final amount = double.tryParse(_amountController.text);
+                          Navigator.pop(context, (true, amount));
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: ThemeConfig.primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Confirm'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    return result ?? (false, null);
+  }
 
   Future<void> _processQrCode(String qrData) async {
     try {
@@ -27,12 +146,27 @@ class _QRScannerPageState extends State<QRScannerPage> {
         throw Exception('User not logged in');
       }
 
-      if (upiData.amount == null || upiData.payeeVpa == null) {
-        throw Exception('Invalid QR code: Missing required data');
+      // Get user consent and amount
+      final (hasConsent, confirmedAmount) = await _getConsentForAmount(
+        context, 
+        upiData.amount ?? 0.0,
+        upiData.payeeName ?? upiData.payeeVpa ?? 'Unknown'
+      );
+
+      if (!hasConsent || confirmedAmount == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Payment cancelled')),
+          );
+        }
+        return;
       }
 
+      // Update UPI data with confirmed amount
+      final updatedQrData = upiData.copyWithAmount(confirmedAmount);
+
       // Prepare expense data
-      final expenseData = upiData.toExpenseData(user.id);
+      final expenseData = updatedQrData.toExpenseData(user.id);
 
       // Insert into Supabase
       final response = await supabase
@@ -43,9 +177,8 @@ class _QRScannerPageState extends State<QRScannerPage> {
 
       final expenseId = response['expense_id'];
 
-      // Show confirmation and proceed to payment
       if (mounted) {
-        _showPaymentConfirmation(context, upiData, expenseId);
+        _showPaymentConfirmation(context, updatedQrData, expenseId);
       }
     } catch (e) {
       if (mounted) {
